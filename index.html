@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <script src="jquery-2.1.1.min.js" type="text/javascript" charset="utf-8"></script>
+    <script src="dia.js" type="text/javascript" charset="utf-8"></script>
+    <script type="text/javascript" charset="utf-8">
+$(function() {
+    dia.draw("usecase1");
+});
+    </script>
+</head>
+<body>
+    <div id="usecase1">
+        <div id="block2"
+             dia-pos="block3+E+80px"
+             dia-align="a1" 
+             dia-size="80px:80px">2
+        </div>
+        <div>1</div>
+
+        <div id="block3" 
+             dia-pos="block2+S+40px"
+             dia-size="80px:80px">3
+        </div>
+        <!-- <div dia&#45;size="80px:320px"  dia&#45;type="rectangle">1</div> -->
+
+
+        <div id="block4" 
+             dia-pos="block2+S+40px"
+             dia-size="80px:80px">4
+        </div>
+
+        <div dia-line-start="block1+N+rhombus" dia-line-end="block2+N"></div>
+        <div dia-line-start="block1+E+circle"  dia-line-end="block3+W+triangle"></div>
+        <div dia-line-start="block1+SE"        dia-line-end="block4+NW+circle"></div>
+    </div>
+</body>
+</html>
