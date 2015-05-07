@@ -25,26 +25,38 @@ var dia = (function() {
         pub.draw = function(diaId) {
             cfg.elem = $('#' + diaId);
 
-            parseDescr_();
+            try {
+                parseDescr_();
+            } catch (e) {
+                console.log('#' + diaId + ': ' + e);
+            }
         };
 
         function parseDescr_() {
             cfg.elem.children().each(function(id, e) {
-                    var attribs = getAttribs_(e);
-                    var t = getType(attribs);
+                    try  {
+                        var attribs = getAttribs_(e);
+                        var t = getType_(attribs);
 
-                    if (t != type.line) {
-                        var b = new block(attribs);
-                        b.elem = e;
-                        blocks.push(b);
-                    } else {
-                        var l = new line(attribs);
-                        l.elem = e;
-                        lines.push(l);
+                        if (t != type.line) {
+                            var b = new block(attribs);
+                            b.elem = e;
+                            blocks.push(b);
+                        } else {
+                            var l = new line(attribs);
+                            l.elem = e;
+                            lines.push(l);
+                        }
+                    } catch (str) {
+                        throw '#' + attribs.id + ': ' + str;
                     }
                 });
 
-            checkIdScope();
+            try {
+                checkIdScope();
+            } catch (e) {
+                throw e;
+            }
 
             for (var i = 0; i < blocks.length; i++)
                 console.log(blocks[i]);
@@ -66,7 +78,7 @@ var dia = (function() {
             return rc;
         }
 
-        function getType(attribs) {
+        function getType_(attribs) {
             if (('dia-line-start' in attribs) && ('dia-line-end' in attribs))
                 return type.line;
 
@@ -74,11 +86,11 @@ var dia = (function() {
                 return type.line;
 
             var hasPos = ('dia-pos' in attribs);
-            var hasPivot = ('hasPivot' in getType);
+            var hasPivot = ('hasPivot' in getType_);
 
             if (hasPos || !hasPivot) {
                 if (!hasPos)
-                    getType.hasPivot = true;
+                    getType_.hasPivot = true;
 
                 if (!('dia-type' in attribs))
                     return type.rect;
@@ -91,7 +103,7 @@ var dia = (function() {
                 throw 'Unknown "dia-type" value';
             } 
 
-            throw "No required attributes specified";
+            throw 'No required attributes specified';
         }
 
         function block(attribs) {
@@ -103,13 +115,13 @@ var dia = (function() {
             if (attribs['dia-type'] == 'ellipse')
                 this.shape = type.ellipse;
 
-            this.id = attribs['id'];
+            this.domId = attribs['id'];
 
             if ('dia-pos' in attribs) {
                 var a = attribs['dia-pos'].split('+');
 
                 if (a.length < 2)
-                    throw "sadsfsf";
+                    throw 'Incorrect "dia-pos" value';
 
                 this.relId = a[0];
 
@@ -123,17 +135,17 @@ var dia = (function() {
                 case 'ne': pos = new point( 1, -1); break;
                 case 'sw': pos = new point(-1,  1); break;
                 case 'se': pos = new point( 1,  1); break;
-                default: throw "asdfasf";
+                default: throw 'Incorrect "dia-pos" value (postion)';
                 }
                 this.relPos = pos;
 
                 if (a[2] != null) {
                     if (a[2].substr(-2) != 'px')
-                        throw "sadsfsf";
+                        throw 'Incorrect "dia-pos" value (size)';
 
                     this.relDist = parseInt(a[2]);
                     if (this.relDist <= 0)
-                        throw "sadsfsf";
+                        throw 'Incorrect "dia-pos" value (size)';
                 } 
             }
 
@@ -143,7 +155,7 @@ var dia = (function() {
                 case 'a': cur = -0.5; break;
                 case 'b': cur = 0; break;
                 case 'c': cur = 0.5; break;
-                default: throw "asdfasf";
+                default: throw 'Incorrect "dia-align" value';
                 }
 
                 var rel;
@@ -151,7 +163,7 @@ var dia = (function() {
                 case '1': rel = 0.5; break;
                 case '2': rel = 0; break;
                 case '3': rel = -0.5; break;
-                default: throw "asdfasf";
+                default: throw 'Incorrect "dia-align" value';
                 }
 
                 this.alignCur = cur;
@@ -162,17 +174,17 @@ var dia = (function() {
                 var a = attribs['dia-size'].split(':');
 
                 if (a.length != 2)
-                    throw "sadsfsf";
+                    throw 'Incorrect "dia-size" value';
 
                 var w = parseInt(a[0]);
                 var h = parseInt(a[1]);
 
                 if (a[0].substr(-2) == 'px' && a[1].substr(-2) == 'px') {
                     this.minSize = new size(w, h);
-                } else if (w > 0 && h > 0) {
+                } else if (a[0].match('/^\d+$/') && a[1].match('/^\d+$/') && w > 0 && h > 0) {
                     this.prop = w / h;
                 } else {
-                    throw "sadsfsf";
+                    throw 'Incorrect "dia-size" value';
                 }
             }
 
@@ -180,7 +192,7 @@ var dia = (function() {
                 var a = attribs['dia-coords'].split(':');
 
                 if (a.length != 2)
-                    throw "sadsfsf";
+                    throw 'Incorrect "dia-coords" value';
 
                 var x = parseInt(a[0]);
                 var y = parseInt(a[1]);
@@ -188,7 +200,7 @@ var dia = (function() {
                 if (a[0].substr(-2) == 'px' && a[1].substr(-2) == 'px' && x > 0 && y > 0) {
                     this.coords = new point(x, y);
                 } else {
-                    throw "sadsfsf";
+                    throw 'Incorrect "dia-coords" value';
                 }
             }
         }
@@ -201,14 +213,14 @@ var dia = (function() {
             this.lineWidth = 1;
             this.lineStyle = lineStyle.solid;
             this.lineColor = "black";
-            this.id = attribs['id'];
+            this.domId = attribs['id'];
 
             function lineEnd(str) {
                 var rc = {};
                 var a = str.split('+');
 
                 if (a.length < 2)
-                    throw "sadsfsf";
+                    throw '';
 
                 rc['id'] = a[0];
 
@@ -222,7 +234,7 @@ var dia = (function() {
                 case 'ne': pos = new point( 1, -1); break;
                 case 'sw': pos = new point(-1,  1); break;
                 case 'se': pos = new point( 1,  1); break;
-                default: throw "asdfasf";
+                default: throw 'position';
                 }
                 rc['pos'] = pos;
 
@@ -234,31 +246,39 @@ var dia = (function() {
                 case 'circle': sh = lineEndShape.circle; break;
                 case 'triangle': sh = lineEndShape.triangle; break;
                 case undefined: sh = null; break;
-                default: throw "asdf";
+                default: throw 'end style';
                 }
                 rc['sh'] = sh;
 
                 return rc;
             }
 
-            var s = lineEnd(attribs['dia-line-start']);
-            this.startBlockId = s.id;
-            this.startBlockPos = s.pos;
-            if (s.sh != null)
-                this.startBlockShape = s.sh;
+            try {
+                var s = lineEnd(attribs['dia-line-start']);
+                this.startBlockId = s.id;
+                this.startBlockPos = s.pos;
+                if (s.sh != null)
+                    this.startBlockShape = s.sh;
+            } catch (s) {
+                throw 'Incorrect "dia-line-start" value' + s;
+            }
 
-            var e = lineEnd(attribs['dia-line-end']);
-            this.startBlockId = e.id;
-            this.startBlockPos = e.pos;
-            if (e.sh != null)
-                this.startBlockShape = e.sh;
+            try {
+                var e = lineEnd(attribs['dia-line-end']);
+                this.startBlockId = e.id;
+                this.startBlockPos = e.pos;
+                if (e.sh != null)
+                    this.startBlockShape = e.sh;
+            } catch (s) {
+                throw 'Incorrect "dia-line-end" value' + s;
+            }
 
 
             switch (attribs['dia-direction']) {
             case 'hor': this.capDir = capDir.hor; break;
             case 'ver': this.capDir = capDir.ver; break;
             case undefined: break;
-            default: throw "asdf";
+            default: throw 'Incorrect "dia-direction" value';
             }
 
             switch (attribs['dia-text-pos']) {
@@ -266,7 +286,7 @@ var dia = (function() {
             case 'start': this.capPos = capPos.start; break;
             case 'end': this.capPos = capPos.end; break;
             case undefined: break;
-            default: throw "asdf";
+            default: throw 'Incorrect "dia-text-pos" value';
             }
 
             if ('dia-line-style' in attribs) {
@@ -283,7 +303,7 @@ var dia = (function() {
                     case 'solid': this.lineStyle = lineStyle.solid; break;
                     case 'dotter': this.lineStyle = lineStyle.dotted; break;
                     case 'dashed': this.lineStyle = lineStyle.dashed; break;
-                    default: throw "asdf";
+                    default: throw 'Incorrect "dia-line-style" value';
                     }
                 }
 
@@ -295,33 +315,33 @@ var dia = (function() {
 
         function checkIdScope() {
             for (var i = 0; i < blocks.length; i++) {
-                    for (var j = 0; j < blocks.length; j++) {
-                        if (blocks[j].relId == blocks[i].id)
-                            blocks[j].relId = i;
-                    }
+                for (var j = 0; j < blocks.length; j++) {
+                    if (blocks[j].relId == blocks[i].domId)
+                        blocks[j].relId = i;
+                }
 
-                    for (var j = 0; j < lines.length; j++) {
-                        if (lines[j].startBlockId == blocks[i].id)
-                            lines[j].startBlockId = i;
-                        if (lines[j].endBlockId == blocks[i].id)
-                            lines[j].endBlockId = i;
-                    }
-                    blocks[i].id = i;
+                for (var j = 0; j < lines.length; j++) {
+                    if (lines[j].startBlockId == blocks[i].domId)
+                        lines[j].startBlockId = i;
+                    if (lines[j].endBlockId == blocks[i].domId)
+                        lines[j].endBlockId = i;
+                }
+
+                blocks[i].id = i;
             };
 
             for (var i = 0; i < blocks.length; i++) {
                 if (typeof (blocks[i].relId) != 'number')
-                    throw "asdfaf";
+                    throw blocks[i].domId + ': #' + blocks[i].relId + ' doesn\'t belong to diagram';
             }
 
             for (var i = 0; i < lines.length; i++) {
                 if (typeof (lines[i].startBlockId) != 'number')
-                    throw "asdfaf";
+                    throw line[i].domId + ': id #' + lines[i].startBlockId + ' doesn\'t belong to diagram';
                 if (typeof (lines[i].endBlockId) != 'number')
-                    throw "asdfaf";
+                    throw line[i].domId + ': id #' + lines[i].endBlockId + ' doesn\'t belong to diagram';
             }
         }
-
 
         return pub;
 }());
