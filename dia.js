@@ -22,6 +22,10 @@ var dia = (function() {
             this.h = h;
         }
 
+        function isNum(str) {
+            return str.match(/^\d+$/);
+        }
+
         pub.draw = function(diaId) {
             cfg.elem = $('#' + diaId);
 
@@ -30,21 +34,33 @@ var dia = (function() {
             } catch (e) {
                 console.log('#' + diaId + ': ' + e);
             }
+
+            for (var i = 0; i < blocks.length; i++)
+                console.log(blocks[i]);
+            for (var i = 0; i < lines.length; i++)
+                console.log(lines[i]);
         };
+
+        function setDivDefaultCSS(elem) {
+            $(elem).css({'position': 'absolute'});
+            $(elem).css({'height': 'auto'});
+            $(elem).css({'width': 'auto'});
+            $(elem).css({'white-space': 'nowrap'});
+            $(elem).css({'word-wrap': 'break-word'});
+        }
 
         function parseDescr_() {
             cfg.elem.children().each(function(id, e) {
-                    try  {
+                    try {
+                        setDivDefaultCSS(e);
                         var attribs = getAttribs_(e);
                         var t = getType_(attribs);
 
                         if (t != type.line) {
-                            var b = new block(attribs);
-                            b.elem = e;
+                            var b = new block(attribs, e);
                             blocks.push(b);
                         } else {
-                            var l = new line(attribs);
-                            l.elem = e;
+                            var l = new line(attribs, e);
                             lines.push(l);
                         }
                     } catch (str) {
@@ -57,12 +73,6 @@ var dia = (function() {
             } catch (e) {
                 throw e;
             }
-
-            for (var i = 0; i < blocks.length; i++)
-                console.log(blocks[i]);
-            for (var i = 0; i < lines.length; i++)
-                console.log(lines[i]);
-
         };
 
         function getAttribs_(elem) {
@@ -106,14 +116,15 @@ var dia = (function() {
             throw 'No required attributes specified';
         }
 
-        function block(attribs) {
+        function block(attribs, e) {
+            this.elem = e;
             this.relDist = 20;
             this.alignCur = 0;
             this.alignRel = 0;
-            this.shape = type.rect;
 
+            this.type = type.rect;
             if (attribs['dia-type'] == 'ellipse')
-                this.shape = type.ellipse;
+                this.type = type.ellipse;
 
             this.domId = attribs['id'];
 
@@ -181,7 +192,7 @@ var dia = (function() {
 
                 if (a[0].substr(-2) == 'px' && a[1].substr(-2) == 'px') {
                     this.minSize = new size(w, h);
-                } else if (a[0].match('/^\d+$/') && a[1].match('/^\d+$/') && w > 0 && h > 0) {
+                } else if (isNum(a[0]) && isNum(a[1]) && w > 0 && h > 0) {
                     this.prop = w / h;
                 } else {
                     throw 'Incorrect "dia-size" value';
@@ -203,9 +214,16 @@ var dia = (function() {
                     throw 'Incorrect "dia-coords" value';
                 }
             }
+
+            if (this.type == type.rect) {
+                this.size = rectSize_(this);
+            } else if (this.type == type.ellipse) {
+                this.size = ellipseSize_(this);
+            }
         }
 
-        function line(attribs) {
+        function line(attribs, e) {
+            this.elem = e;
             this.startBlockShape = lineEndShape.none;
             this.endBlockShape = lineEndShape.none;
             this.capPos = capPos.center;
@@ -341,6 +359,60 @@ var dia = (function() {
                 if (typeof (lines[i].endBlockId) != 'number')
                     throw line[i].domId + ': id #' + lines[i].endBlockId + ' doesn\'t belong to diagram';
             }
+        }
+
+        function getTextSize_(elem) {
+            var w = (elem.clientWidth + 1);
+            var h = (elem.clientHeight + 1);
+            return new size(w, h);
+        }
+
+        function rectSize_(block) {
+            var text = getTextSize_(block.elem);
+
+            if (block.prop == undefined && block.minSize == undefined) {
+                return text;
+            }
+
+            var p;
+            if (block.minSize != undefined) {
+                if (block.minSize.w >= text.w && block.minSize.h >= text.h)
+                    return block.minSize;
+                p = block.minSize.w / block.minSize.h;
+            } else if (block.prop != undefined) {
+                p = block.prop;
+            }
+
+            var tp = text.w / text.h;
+            if (tp > 1 && p < 1 || p < tp)
+                return new size(text.w, text.w / p);
+            if (tp < 1 && p > 1 || p > tp)
+                return new size(text.h * p, text.h);
+        }
+
+        function ellipseSize_(block) {
+            var text = getTextSize_(block.elem);
+
+            if (block.prop == undefined && block.minSize == undefined)
+                return new size(Math.sqrt(2) * text.w, Math.sqrt(2) * text.h);
+
+            if (block.minSize != null) {
+                if (Math.sqrt(2) * text.w < block.minSize.w && Math.sqrt(2) * text.h < block.minSize.h)
+                    return block.minSize;
+
+                return new size(Math.sqrt(2) * text.w, Math.sqrt(2) * text.h);
+            }
+
+            var tp = text.w / text.h;
+            var s;
+            if (tp > 1 && p < 1 || p < tp)
+                s = new size(text.w, text.w / p);
+            if (tp < 1 && p > 1 || p > tp)
+                s = new size(text.h * p, text.h);
+
+            s.w *= Math.sqrt(2);
+            s.h *= Math.sqrt(2);
+            return s;
         }
 
         return pub;
