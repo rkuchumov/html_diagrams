@@ -1,7 +1,10 @@
 var dia = (function() { 
         var pub = {};
 
-        var cfg = {};
+        var cfg = {
+            gridSize: 10,
+            imgSize: null
+        };
 
         var type = { line: 0, rect: 1, ellipse: 2 };
         var lineEndShape = { none: 0, angle: 1, rhombus: 2, circle: 3, triangle: 4 };
@@ -31,15 +34,19 @@ var dia = (function() {
 
             try {
                 parseDescr_();
+
+                blocksPos_();
             } catch (e) {
                 console.log('#' + diaId + ': ' + e);
             }
 
             for (var i = 0; i < blocks.length; i++)
-                console.log(blocks[i]);
-            for (var i = 0; i < lines.length; i++)
-                console.log(lines[i]);
-        };
+                console.log(blocks[i].coords);
+            // for (var i = 0; i < lines.length; i++)
+            //     console.log(lines[i]);
+
+
+        }
 
         function setDivDefaultCSS(elem) {
             $(elem).css({'position': 'absolute'});
@@ -73,7 +80,7 @@ var dia = (function() {
             } catch (e) {
                 throw e;
             }
-        };
+        }
 
         function getAttribs_(elem) {
             var rc = {};
@@ -161,19 +168,19 @@ var dia = (function() {
             }
 
             if ('dia-align' in attribs) {
-                var cur;
+                var rel;
                 switch (attribs['dia-align'][0]) {
-                case 'a': cur = -0.5; break;
-                case 'b': cur = 0; break;
-                case 'c': cur = 0.5; break;
+                case 'a': rel = -0.5; break;
+                case 'b': rel = 0; break;
+                case 'c': rel = 0.5; break;
                 default: throw 'Incorrect "dia-align" value';
                 }
 
-                var rel;
+                var cur;
                 switch (attribs['dia-align'][1]) {
-                case '1': rel = 0.5; break;
-                case '2': rel = 0; break;
-                case '3': rel = -0.5; break;
+                case '1': cur = 0.5; break;
+                case '2': cur = 0; break;
+                case '3': cur = -0.5; break;
                 default: throw 'Incorrect "dia-align" value';
                 }
 
@@ -283,10 +290,10 @@ var dia = (function() {
 
             try {
                 var e = lineEnd(attribs['dia-line-end']);
-                this.startBlockId = e.id;
-                this.startBlockPos = e.pos;
+                this.endBlockId = e.id;
+                this.endBlockPos = e.pos;
                 if (e.sh != null)
-                    this.startBlockShape = e.sh;
+                    this.endBlockShape = e.sh;
             } catch (s) {
                 throw 'Incorrect "dia-line-end" value' + s;
             }
@@ -333,6 +340,11 @@ var dia = (function() {
 
         function checkIdScope() {
             for (var i = 0; i < blocks.length; i++) {
+                blocks[i].id = i;
+
+                if (blocks[i].domId == undefined)
+                    continue;
+
                 for (var j = 0; j < blocks.length; j++) {
                     if (blocks[j].relId == blocks[i].domId)
                         blocks[j].relId = i;
@@ -344,12 +356,10 @@ var dia = (function() {
                     if (lines[j].endBlockId == blocks[i].domId)
                         lines[j].endBlockId = i;
                 }
-
-                blocks[i].id = i;
-            };
+            }
 
             for (var i = 0; i < blocks.length; i++) {
-                if (typeof (blocks[i].relId) != 'number')
+                if (typeof (blocks[i].relId) == 'string')
                     throw blocks[i].domId + ': #' + blocks[i].relId + ' doesn\'t belong to diagram';
             }
 
@@ -413,6 +423,110 @@ var dia = (function() {
             s.w *= Math.sqrt(2);
             s.h *= Math.sqrt(2);
             return s;
+        }
+
+        function blocksPos_() {
+            blocksRelPos_();
+            blocksAbsPos_();
+
+            try {
+                checkOverlaps_();
+            } catch (e) {
+                throw e;
+            }
+        }
+
+        function blocksRelPos_() {
+            for (var i = 0; i < blocks.length; i++) {
+                if (blocks[i].relId !== undefined)
+                    continue;
+
+                var t = blocks[0];
+                blocks[0] = blocks[i];
+                blocks[i] = t;
+                break;
+            } 
+
+            blocks[0].coords = new point(0, 0);
+
+            for (var i = 0; i < blocks.length; i++) { 
+                for (var j = 0; j < blocks.length; j++) { 
+                    if (blocks[j].relId == undefined) // pivot or block with abs position
+                        continue;
+                    if (blocks[j].relId != blocks[i].id)
+                        continue;
+
+                    //Координаты блока j = 
+                    //     коорд i
+                    //     + расстояние между центрами по одной из компонент
+                    //     + смещение (выравнивание) по другой
+
+                    var x = blocks[i].coords.x + 
+                        blocks[j].relPos.x * (blocks[i].size.w / 2 + blocks[j].relDist + blocks[j].size.w / 2) +
+                        (blocks[j].alignCur * blocks[j].size.w + blocks[j].alignRel * blocks[i].size.w) 
+                        * (1 - Math.abs(blocks[j].relPos.x));
+
+                    var y = blocks[i].coords.y + 
+                        blocks[j].relPos.y * (blocks[i].size.h / 2 + blocks[j].relDist + blocks[j].size.h / 2) +
+                        (blocks[j].alignCur * blocks[j].size.h + blocks[j].alignRel * blocks[i].size.h)
+                        * (1 - Math.abs(blocks[j].relPos.y));
+
+                    blocks[j].coords = new point(x, y);
+                }
+            }
+        }
+
+        function blocksAbsPos_() {
+            var left = Number.MAX_VALUE;
+            var right = -Number.MAX_VALUE;
+            var top_ = Number.MAX_VALUE;
+            var bottom = -Number.MAX_VALUE;
+            $.each(blocks, function(i, block) {
+                    var l = block.coords.x - block.size.w / 2;
+                    if (l < left) left = l;
+
+                    var r = block.coords.x + block.size.w / 2;
+                    if (r > right) right = r;
+
+                    var t = block.coords.y - block.size.h / 2;
+                    if (t < top_) top_ = t;
+
+                    var b = block.coords.y + block.size.h / 2;
+                    if (b > bottom) bottom = b;
+                });
+
+            left -= 2 * cfg.gridSize;
+            right += 2 * cfg.gridSize;
+            top_ -= 2 * cfg.gridSize;
+            bottom += 2 * cfg.gridSize;
+
+            var w = right - left;
+            var h = bottom - top_;
+            w += w % cfg.gridSize;
+            h += h % cfg.gridSize;
+            cfg.imgSize = new size(w, h);
+
+            $.each(blocks, function(i, block) {
+                    block.coords.x += -left;
+                    block.coords.y += -top_;
+                });
+        }
+
+        function checkOverlaps_() {
+            for (var i = 0; i < blocks.length; i++) { 
+                for (var j = i + 1; j < blocks.length; j++) { 
+                    var x1 = blocks[i].coords.x;
+                    var y1 = blocks[i].coords.y;
+                    var x2 = blocks[j].coords.x;
+                    var y2 = blocks[j].coords.y;
+
+                    var w = 2 * cfg.gridSize + (blocks[i].size.w + blocks[j].size.w) / 2;
+                    var h = 2 * cfg.gridSize + (blocks[i].size.h + blocks[j].size.h) / 2;
+
+                    if ((Math.abs(x1 - x2) < w) && (Math.abs(y1 - y2) < h))
+                        throw "#" + blocks[i].domId + " overlaps #" + blocks[j].domId;
+                }
+            }
         }
 
         return pub;
