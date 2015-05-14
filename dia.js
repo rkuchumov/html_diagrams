@@ -30,6 +30,8 @@ var dia = (function() {
         }
 
         pub.draw = function(diaId) {
+            blocks = [];
+            lines = [];
             cfg.elem = $('#' + diaId);
 
             try {
@@ -40,12 +42,17 @@ var dia = (function() {
                 console.log('#' + diaId + ': ' + e);
             }
 
-            for (var i = 0; i < blocks.length; i++)
-                console.log(blocks[i].coords);
+            $(cfg.elem).css({'width': cfg.imgSize.w});
+            $(cfg.elem).css({'height': cfg.imgSize.h});
+            $(cfg.elem).css({'background': 'red'});
+            $(cfg.elem).css({'position': 'relative'});
+
+            drawBlocks_();
+
+            // for (var i = 0; i < blocks.length; i++)
+            //     console.log(blocks[i]);
             // for (var i = 0; i < lines.length; i++)
             //     console.log(lines[i]);
-
-
         }
 
         function setDivDefaultCSS(elem) {
@@ -54,6 +61,7 @@ var dia = (function() {
             $(elem).css({'width': 'auto'});
             $(elem).css({'white-space': 'nowrap'});
             $(elem).css({'word-wrap': 'break-word'});
+            $(elem).css({'text-align': 'center'});
         }
 
         function parseDescr_() {
@@ -61,6 +69,7 @@ var dia = (function() {
                     try {
                         setDivDefaultCSS(e);
                         var attribs = getAttribs_(e);
+                        delete getType_.hasPivot;
                         var t = getType_(attribs);
 
                         if (t != type.line) {
@@ -527,6 +536,25 @@ var dia = (function() {
                         throw "#" + blocks[i].domId + " overlaps #" + blocks[j].domId;
                 }
             }
+        }
+
+        function drawBlocks_() {
+            $.each(blocks, function(i, block) {
+                    var top_ = block.coords.y - block.size.h / 2;
+                    var left = block.coords.x - block.size.w / 2;
+
+                    $(block.elem).css({'top': top_});
+                    $(block.elem).css({'left': left});
+                    $(block.elem).css({'width': block.size.w});
+                    $(block.elem).css({'height': block.size.h});
+
+                    if (block.type == type.ellipse) {
+                        var r = (block.size.w / 2) + "px/" + (block.size.h / 2) + "px";
+                        $(block.elem).css({'-moz-border-radius': r});
+                        $(block.elem).css({'-webkit-border-radius': r});
+                        $(block.elem).css({'border-radius': r});
+                    }
+                });
         }
 
         return pub;

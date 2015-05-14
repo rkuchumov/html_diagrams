@@ -7,15 +7,19 @@
         <script type="text/javascript" charset="utf-8">
 $(function() {
     dia.draw("usecase1");
+    dia.draw("usecase2");
 });
         </script>
         <style type="text/css" media="screen">
-#usecase1 div  {
-    background: #aaa;
-}
+#usecase1 div {background: #aaa;}
+#usecase2 div {background: #aaa;}
         </style>
     </head>
     <body>
+        Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod
+        tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At
+        vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren,
+        no sea takimata sanctus est Lorem ipsum dolor sit amet.
         <div id="usecase1">
             <div id="block1" dia-size="80px:320px">1</div>
             <div id="block2" dia-pos="block1+E+80px" dia-align="a1" dia-size="80px:80px">2</div>
@@ -25,6 +29,27 @@ $(function() {
             <div dia-line-start="block1+N+rhombus" dia-line-end="block2+N"></div>
             <div dia-line-start="block1+E+circle"  dia-line-end="block3+W+triangle"></div>
             <div dia-line-start="block1+SE"        dia-line-end="block4+NW+circle"></div>
+        </div>
+        Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod
+        tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At
+        vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren,
+        no sea takimata sanctus est Lorem ipsum dolor sit amet.
+
+        <div id="usecase2">
+            <div id="block1" dia-size="140px:120px">1</div>
+            <div id="block2" dia-pos="block1+W+140px" dia-align="b1" dia-size="140px:120px">2</div>
+            <div id="block3" dia-pos="block1+S+60px" dia-align="a3" min-size="60px:140px">3</div>
+            <div id="block4" dia-pos="block1+S+60px" dia-align="c2" min-size="100px:50px">4</div>
+            <div id="block6" dia-pos="block2+S+35px" dia-size="100px:50px">6</div>
+            <div id="block7" dia-pos="block5+S+35px">7</div>
+            <div id="block5" dia-type="ellipse" dia-pos="block3+S+20px" dia-align="c1">555</div>
+
+            <!-- <div dia&#45;line&#45;start="block1+W+circle"  dia&#45;line&#45;end="block2+NE">text1</div> -->
+            <!-- <div dia&#45;line&#45;start="block1+S+rhombus" dia&#45;line&#45;end="block3+N"></div> -->
+            <!-- <div dia&#45;line&#45;start="block1+S+rhombus" dia&#45;line&#45;end="block4+N"></div> -->
+            <!-- <div dia&#45;line&#45;start="block3+S+triangle" dia&#45;line&#45;end="blcok5+N" dia&#45;direction="ver">text2 </div> -->
+            <!-- <div dia&#45;line&#45;start="block2+S" dia&#45;line&#45;end="block6+N"></div> -->
+            <!-- <div dia&#45;line&#45;start="block6+S+rhombus" dia&#45;line&#45;end="block7+N+triangle"></div> -->
         </div>
     </body>
 </html>
