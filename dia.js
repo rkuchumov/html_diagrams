@@ -44,7 +44,6 @@ var dia = (function() {
 
             $(cfg.elem).css({'width': cfg.imgSize.w});
             $(cfg.elem).css({'height': cfg.imgSize.h});
-            $(cfg.elem).css({'background': 'red'});
             $(cfg.elem).css({'position': 'relative'});
 
             drawBlocks_();
@@ -554,6 +553,12 @@ var dia = (function() {
                         $(block.elem).css({'-webkit-border-radius': r});
                         $(block.elem).css({'border-radius': r});
                     }
+
+                    $(block.elem).wrapInner('<span></span>');
+                    $(block.elem).children(':first').css({'display': 'table-cell'});
+                    $(block.elem).children(':first').css({'vertical-align': 'middle'});
+                    $(block.elem).children(':first').css({'height': block.size.h});
+                    $(block.elem).children(':first').css({'width': block.size.w});
                 });
         }
 
