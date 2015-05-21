@@ -48,7 +48,7 @@ var dia = (function() {
 
             drawBlocks_();
 
-            // linesPos_();
+            linesPos_();
 
             // for (var i = 0; i < blocks.length; i++)
             //     console.log(blocks[i].coords);
@@ -578,14 +578,14 @@ var dia = (function() {
                     var enB = blocks[line.endBlockId];
                     var enX = enB.coords.x + 0.5 * enB.size.w * line.endBlockPos.x;
                     var enY = enB.coords.y + 0.5 * enB.size.h * line.endBlockPos.y;
-                    var enNode = new point(Math.round(enX / grid.h), Math.round(enY / grid.h));
-                    var enNode = new point(28, 6);
-                    
+                    // var enNode = new point(Math.round(enX / grid.h), Math.round(enY / grid.h));
+                    var enNode = new point(26, 6);
+
                     grid[enNode.y][enNode.x] = 0;
 
-                    var nodePath = findPath(grid, stNode, enNode);
-                    var nodes = calcPath(grid, nodePath, stNode, enNode);
-                    console.log(nodes);
+                    var pathParents = findPath(grid, stNode, enNode);
+                    var nodePath = calcPath(grid, pathParents, stNode, enNode);
+                    console.log(nodePath);
                 });
         }
 
@@ -593,11 +593,17 @@ var dia = (function() {
             function node(x, y) {
                 this.x = x;
                 this.y = y;
-                this.n = y * (grid.m - 1) + x;
+                this.n = y * grid.n + x;
                 this.dist = function(other) {
                     return Math.abs(this.x - other.x) + Math.abs(this.y - other.y);
                 }
             }
+
+            // var n = new node(26, 6);
+            // var n = new node(10, 18);
+            // console.log(n);
+            // console.log(grid.node(n.n));
+            // return;
 
             start = new node(st.x, st.y);
             end = new node(en.x, en.y);
@@ -661,7 +667,7 @@ var dia = (function() {
             function node(x, y) {
                 this.x = x;
                 this.y = y;
-                this.n = y * (grid.m - 1) + x;
+                this.n = y * grid.n + x;
                 this.dist = function(other) {
                     return Math.abs(this.x - other.x) + Math.abs(this.y - other.y);
                 }
@@ -670,18 +676,26 @@ var dia = (function() {
             start = new node(st.x, st.y);
             end = new node(en.x, en.y);
 
-            var cur = end;
+            var prev = end;
+            var cur = grid.node(path[prev.n]);
+
             var p = [];
+            p.push(prev);
+
+            var prevDir = (prev.x == cur.x) ? 1 : 0;
+
+            while (cur.n != start.n) {
+                prev = cur;
+                cur = grid.node(path[cur.n]);
+
+                var curDir = (prev.x == cur.x) ? 1 : 0;
+                if (prevDir != curDir)
+                    p.push(prev);
+                prevDir = curDir;
+            }
             p.push(cur);
 
-            var iter = 0;
-            while (cur.n != start.n) {
-                if (iter++  > 10)
-                    break;
-                cur = grid.node(path[cur.n]);
-                p.push(cur);
-            }
-            return p;
+            return p; 
         }
 
         function initGrid_() {
@@ -697,7 +711,7 @@ var dia = (function() {
             function node(x, y) {
                 this.x = x;
                 this.y = y;
-                this.n = y * (grid.m - 1) + x;
+                this.n = y * grid.n + x;
                 this.dist = function(other) {
                     return Math.abs(this.x - other.x) + Math.abs(this.y - other.y);
                 }
@@ -707,8 +721,8 @@ var dia = (function() {
                 return grid[node.y][node.x];
             }
             grid.node = function(id) {
-                var y = Math.ceil(id / this.m);
-                var x = id % (this.n - 2);
+                var y = Math.floor(id / this.n);
+                var x = id % this.n;
                 return new node(x, y);
             }
 
