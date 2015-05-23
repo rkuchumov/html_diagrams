@@ -3,7 +3,9 @@ var dia = (function() {
 
         var cfg = {
             gridSize: 10,
-            imgSize: null
+            imgSize: null,
+            elem: null,
+            id: null
         };
 
         var type = { line: 0, rect: 1, ellipse: 2 };
@@ -55,6 +57,7 @@ var dia = (function() {
         pub.draw = function(diaId) {
             blocks = [];
             lines = [];
+            cfg.id = diaId;
             cfg.elem = $('#' + diaId);
 
             try {
@@ -73,10 +76,12 @@ var dia = (function() {
 
             linesPos_();
 
-            for (var i = 0; i < blocks.length; i++)
-                console.log(blocks[i]);
-            for (var i = 0; i < lines.length; i++)
-                console.log(lines[i]);
+            drawLines_();
+
+            // for (var i = 0; i < blocks.length; i++)
+            //     console.log(blocks[i]);
+            // for (var i = 0; i < lines.length; i++)
+            //     console.log(lines[i]);
         }
 
         function setDivDefaultCSS(elem) {
@@ -616,16 +621,16 @@ var dia = (function() {
             for (var j = 0; j < this.m; j++)
                 g[j] = new Array(this.n);
 
-            this.val = function(x, y) {
+            this.empty = function(x, y) {
                 if (arguments.length == 1) {
-                    return g[x.y][x.x];
+                    return g[x.y][x.x] == true;
                 } else if (arguments.length == 2) {
-                    return g[y][x];
+                    return g[y][x] == true;
                 }
                 return undefined;
             }
 
-            this.setVal = function(x, y, val) {
+            this.setEmpty = function(x, y, val) {
                 if (arguments.length == 2) {
                     g[x.y][x.x] = y;
                 } else if (arguments.length == 3) {
@@ -648,6 +653,10 @@ var dia = (function() {
         }
 
         function fillGrid(grid) {
+            for (var j = 0; j < grid.m; j++)
+                for (var i = 0; i < grid.n; i++)
+                    grid.setEmpty(i, j, true);
+
             $.each(blocks, function(i, block) {
                     var l = block.coords.x - 0.5 * block.size.w;
                     var r = block.coords.x + 0.5 * block.size.w;
@@ -659,97 +668,67 @@ var dia = (function() {
                             var x = i * grid.h;
                             var y = j * grid.h;
 
-                            if (x >= l && x <= r && y >= b && y <= t) {
-                                grid.setVal(i, j, -1);
-                            } else {
-                                var d = block.coords.euclid(x, y);
-
-                                if (d > x) d = x;
-                                if (d > i) d = y;
-                                if (d > cfg.imgSize.w - x) d = cfg.imgSize.w - x;
-                                if (d > cfg.imgSize.h - y) d = cfg.imgSize.h - y;
-
-                                if (d < grid.val(i, j) || grid.val(i, j) == 0)
-                                    grid.setVal(i, j, d);
-                            }
+                            if (x >= l && x <= r && y >= b && y <= t)
+                                grid.setEmpty(i, j, false);
                         }
                     }
                 });
 
             for (var j = 0; j < grid.m; j++) {
-                grid.setVal(0, j, -1);
-                grid.setVal(0, grid.n - 1, -1);
+                grid.setEmpty(0, j, false);
+                grid.setEmpty(grid.n - 1, j, false);
             }
 
             for (var i = 0; i < grid.n; i++) {
-                grid.setVal(i, 0, -1);
-                grid.setVal(i, grid.m - 1, -1);
+                grid.setEmpty(i, 0, false);
+                grid.setEmpty(i, grid.m - 1, false);
             } 
         }
 
+        function findPath(grid, start, end) {
+            grid.setEmpty(end, true);
 
-        function findPath(g, start, end) {
-            g.setVal(end, 0);
-
-            var parents = bfs(g, start, end);
+            var parents = bfs(grid, start, end);
             if (parents == null)
                 return null;
 
-            return restorePath(g, parents, start, end);
+            return restorePath(grid, parents, start, end);
         }
 
         function bfs(grid, start, end) {
-            var open = new PriorityQueue({comparator: function(a, b) {
-                        if (a.manh(end) == b.manh(end))
-                            return grid.val(b) - grid.val(a);
-
-                        return a.manh(end) - b.manh(end);
-                    }});
-
-            open.queue(start);
-            var isClosed = [];
-            var isOpen = [];
-            isOpen[grid.id(start)] = true;
+            var open = [];
+            open.push(start);
+            var closed = [];
 
             var path = [];
             path[grid.id(start)] = grid.id(start);
-            var cost = [];
 
             var dx = [ 0,  1,  0, -1];
             var dy = [-1,  0,  1,  0];
 
             while (open.length != 0) {
-                var u = open.dequeue();
-
-                if (u.x == end.x && u.y == end.y) {
-                    return path;
-                }
-
-                isClosed[grid.id(u)] = false;
+                var u = open.shift();
 
                 for (var d = 0; d < dx.length; d++) {
                     var v = new point(u.x + dx[d], u.y + dy[d]);
-                    if (grid.val(v) < 0)
+                    if (!grid.empty(v))
                         continue;
-                    if (isClosed[grid.id(v)] == true)
+                    if (grid.id(v) in closed)
                         continue;
 
-                    var tmp = cost[grid.id(u)] + u.manh(v);
+                    closed[grid.id(v)] = true;
 
-                    if (isOpen[grid.id(v)] != true) {
-                        isOpen[grid.id(v)] = true;
-                        open.queue(v);
-                        path[grid.id(v)] = grid.id(u);
-                        cost[grid.id(v)] = tmp;
-                    } else if (tmp < cost[grid.id(v)]) {
-                        path[grid.id(v)] = grid.id(u);
-                        cost[grid.id(v)] = tmp;
-                    }
+                    open.push(v);
+                    path[grid.id(v)] = grid.id(u);
                 }
             }
 
-            console.log("path not found");
-            return null;
+            if (!(grid.id(end) in closed)) {
+                console.log("path not found");
+                return null;
+            }
+
+            return path;
         }
 
         function restorePath(grid, path, start, end) {
@@ -778,9 +757,42 @@ var dia = (function() {
             return p; 
         }
 
+        function drawLines_() {
+            var id = cfg.id + 'Canvas';
+            var can = '<canvas ' + 
+                'id="' + id + '" ' + 
+                'width="' + cfg.imgSize.w + '" ' +
+                'height="' + cfg.imgSize.h + '">' +
+                'Your browser does not support the HTML5 canvas tag.' + 
+                '</canvas>';
 
-        function lineEndNode() {
+            $(cfg.elem).append(can);
 
+            var ctx = document.getElementById(id).getContext("2d");
+
+            $.each(lines, function(i, line) {
+                    ctx.beginPath();
+                    // ctx.strokeStyle = '#f0f';
+                    ctx.lineWidth = 1;
+                    
+                    var prev = line.points[0];
+                    ctx.moveTo(prev.x, prev.y);
+                    var cur = line.points[1];
+                    ctx.lineTo(cur.x, cur.y);
+
+                    for (var j = 2; j < line.points.length; j++) {
+                        prev = cur;
+                        cur = line.points[j];
+
+                        ctx.moveTo(prev.x, prev.y);
+                        ctx.lineTo(cur.x, cur.y);
+                    }
+                    ctx.stroke();
+                });
+
+            // ctx.beginPath();
+            // ctx.lineWidth = 1;
+            // ctx.moveTo(0, 0);
         }
 
         return pub;
