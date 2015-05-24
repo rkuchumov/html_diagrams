@@ -1,25 +1,45 @@
 var dia = (function() { 
         var pub = {};
 
+        /** Enum for diagram objects types
+         * @readonly
+         * @enum {Number}
+         */
         var type = { 
             line: 0,
             rect: 1,
             ellipse: 2,
         };
 
+        /** Enum for line ends' styles
+         * @readonly
+         * @enum {Number}
+         */
         var lineEndShape = { 
+            /** Straight line */
             none: 0,
+            /** Angle bracket (<, >) */ 
             angle: 1,
             rhombus: 2, 
             circle: 3,
             triangle: 4,
         };
 
+        /** Enum for line caption direction
+         * @readonly
+         * @enum {Number}
+         */
         var capDir = {
+            /** Horizontal */
             hor: 0,
+            /** Vertical */
             ver: 1,
         };
 
+        /** Enum for line caption position
+         * @readonly
+         * @enum {Number}
+         */
         var capPos = {
             start: 0,
             center: 1,
@@ -32,20 +52,61 @@ var dia = (function() {
             dashed: 2,
         };
 
+        /** Checks if a string is a valid number
+         * @return {Boolean} true, if specified string is a number, false otherwise
+         */
         function isNum_(str) {
             return str.match(/^\d+$/);
         }
 
+        /** Calulates elemnt's content width and height
+         * @param {Element} element in DOM
+         * @return {size} element's content size
+         */
         function getTextSize_(elem) {
             var w = (elem.clientWidth + 1);
             var h = (elem.clientHeight + 1);
             return new size(w, h);
         }
 
+        /** Fetches attributes names and values of specified element and 
+         * returns them in lower case
+         * @param {Element} elem DOM object to extract atrributes from
+         * @return {Object<String, String>} atrributes' names and values in lowercase
+         */
+        function getAttribs_(elem) {
+            var attr = {};
+            $(elem.attributes).each(function() {
+                    var name = this.nodeName.toLowerCase();
+                    attr[name] = this.nodeValue.toLowerCase();
+                });
+
+            return attr;
+        }
+
+        /** Creates an instance of 2d point
+         *
+         * @constructor
+         * @param {Number} x first coordinate
+         * @param {Number} y second coordinate
+         */
         function point(x, y) {
             this.x = x;
             this.y = y;
 
+            /** Manhattan distance between this and specified point
+             * @name dist
+             * @function
+             * @param {Number} x first coordinate of another point
+             * @param {Number} y second coordinate of another point
+             * @return {Number} distance betweent this and specified point
+             */
+            /** Manhattan distance between this and specified point
+             * @name^2 dist
+             * @function
+             * @param {point} another point
+             * @return {Number} distance betweent this and specified point
+             */
             this.dist = function(x, y) {
                 if (arguments.length == 1) {
                     return Math.abs(this.x - x.x) + Math.abs(this.y - x.y);
@@ -56,11 +117,26 @@ var dia = (function() {
             }
         }
 
+        /** Creates an instance of size
+         * @param {Number} w width
+         * @param {Number} h height
+         */
         function size(w, h) {
             this.w = w;
             this.h = h;
         }
 
+        /** Creates an instance of diagram config object. 
+         * @param {Element} elem DOM object containing diagram discription
+         * @property {Number} gridSize distance between grid's node. which is
+         * used for calculating line's positions
+         * @property {Number} capOffset caption offset from block and
+         * corresponding line
+         * @property {Number} id diagram discription id in DOM
+         * @propery {size} imgSize diagram size. Can be calculated after
+         * blocks' positions are calulated 
+         * @throws {String} Error message on incorrect attributes values
+         */
         function config(elem) {
             this.elem = elem;
             this.gridSize = 10;
@@ -89,12 +165,15 @@ var dia = (function() {
             this.imgSize = null;
         }
 
+        /** Creates diagramm image corresponding to specified description.
+         * @param {String} id DOM's id of an object contating diagam description
+         */
         pub.draw = function(id) {
-            var cfg = new config($('#' + id)[0]);
-            var blocks = [];
-            var lines = [];
-
             try {
+                var cfg = new config($('#' + id)[0]);
+
+                var blocks = [];
+                var lines = [];
                 var r = parseDescr_(cfg);
                 blocks = r.blocks;
                 lines = r.lines;
@@ -121,6 +200,12 @@ var dia = (function() {
             $(elem).css({'text-align': 'center'});
         }
 
+        /** Travels diagram's child objects(DOM) and creates line or block instance 
+         * for each object. 
+         * @param {config} cfg diagram config instance
+         * @throws {String} error message (parsing error or out-of-scope id error)
+         * @return {{blocks: Array.<block>, lines: Array.<line>}} Block and lines arrays
+         */
         function parseDescr_(cfg) {
             var blocks = [];
             var lines = [];
@@ -151,19 +236,14 @@ var dia = (function() {
             return {'blocks': blocks, 'lines': lines};
         }
 
-        function getAttribs_(elem) {
-            var rc = {};
-            $(elem.attributes).each(function() {
-                    var name = this.nodeName.toLowerCase();
-                    if (name != 'id')
-                        rc[name] = this.nodeValue.toLowerCase();
-                    else
-                        rc[name] = this.nodeValue;
-                });
-
-            return rc;
-        }
-
+        /** Determines type of diagram object (line, rectangle, ellipse)
+         * by its attributes
+         * @param {Object<String, String>} atrributes' name and values
+         * @return {type} type of an object
+         * @throws {String} error message when unable to detemine type
+         * @property {Boolean} hasPivot true, if block without relative
+         * position found
+         */
         function getType_(attribs) {
             if (('dia-line-start' in attribs) && ('dia-line-end' in attribs))
                 return type.line;
@@ -192,6 +272,24 @@ var dia = (function() {
             throw 'No required attributes specified';
         }
 
+        /** Creates block instance
+         * @param {Object<String, String>} blocks attributes
+         * @param {Element} DOM object containing specified attributes
+         * @property {Element} elem an object describing this block
+         * @property {Number} [relDist=20] block's distanse relative to relId
+         * @property {Number} [alignCur=0] an axis of this block corresponding 
+         * to the letter in 'dia-aling' attribute. Possible values: -0.5, 0, 0.5
+         * for C, B, A axes
+         * @property {Number} [alignRel=0] an axis of relId block corresponding 
+         * to the digit in 'dia-aling' attribute. Possible values: -0.5, 0, 0.5
+         * for 3, 2, 1 axes
+         * @property {type} [type=type.rect] block type (rectangle, ellispse)
+         * @property {String} domId id of DOM element describing this block
+         * @property {point} relPos position of this block relative to relId block
+         * @property {size} calculated block's size
+         * @property {coords} block's absolute position
+         * @throws {String} an error message if unable to parse attribute's value
+         */
         function block(attribs, e) {
             this.elem = e;
             this.relDist = 20;
@@ -298,10 +396,26 @@ var dia = (function() {
             }
         }
 
+        /** Creates line instance
+         * @param {Object<String, String>} line attributes
+         * @param {Element} DOM object containing specified attributes
+         * @property {Element} elem an object describing this line
+         * @property {lineEndShape} [startStyle=lineEndShape.none] 
+         * style at the beginning of the line
+         * @property {lineEndShape} [endStyle=lineEndShape.none] 
+         * style at the end of the line
+         * @property {capPos} [capPos=capPos.center] caption position
+         * @property {capDir} [capDir=capDir.hor] caption direction
+         * @property {Number} [lineWidth=1] line width
+         * @property {lineStyle} [lineStyle=lineStyle.solid] line style
+         * @property {String} [lineColor='black'] line color
+         * @property {String} domId id of DOM element describing this line
+         * @throws {String} an error message if unable to parse attribute's value
+         */
         function line(attribs, e) {
             this.elem = e;
-            this.startBlockShape = lineEndShape.none;
-            this.endBlockShape = lineEndShape.none;
+            this.startStyle = lineEndShape.none;
+            this.endStyle = lineEndShape.none;
             this.capPos = capPos.center;
             this.capDir = capDir.hor;
             this.lineWidth = 1;
@@ -309,14 +423,22 @@ var dia = (function() {
             this.lineColor = "black";
             this.domId = attribs['id'];
 
+            /** Parses values of 'dia-line-start' or 'dia-line-end' attributes
+             * @param {String} attribute value
+             * @return {Object} ret parsed value
+             * @return {String} ret.id id of an end block
+             * @return {point} ret.pos line's end position 
+             * @return {lineEndShape} ret.sh line's end style
+             * @throws {String} an error message if unable to parse attribute's value
+             */
             function lineEnd(str) {
-                var rc = {};
+                var ret = {};
                 var a = str.split('+');
 
                 if (a.length < 2)
                     throw '';
 
-                rc['id'] = a[0];
+                ret['id'] = a[0];
 
                 var pos;
                 switch (a[1]) {
@@ -330,7 +452,7 @@ var dia = (function() {
                 case 'se': pos = new point( 1,  1); break;
                 default: throw 'position';
                 }
-                rc['pos'] = pos;
+                ret['pos'] = pos;
 
                 var sh;
                 switch (a[2]) {
@@ -342,9 +464,9 @@ var dia = (function() {
                 case undefined: sh = null; break;
                 default: throw 'end style';
                 }
-                rc['sh'] = sh;
+                ret['sh'] = sh;
 
-                return rc;
+                return ret;
             }
 
             try {
@@ -352,7 +474,7 @@ var dia = (function() {
                 this.startBlockId = s.id;
                 this.startBlockPos = s.pos;
                 if (s.sh != null)
-                    this.startBlockShape = s.sh;
+                    this.startStyle = s.sh;
             } catch (s) {
                 throw 'Incorrect "dia-line-start" value' + s;
             }
@@ -362,7 +484,7 @@ var dia = (function() {
                 this.endBlockId = e.id;
                 this.endBlockPos = e.pos;
                 if (e.sh != null)
-                    this.endBlockShape = e.sh;
+                    this.endStyle = e.sh;
             } catch (s) {
                 throw 'Incorrect "dia-line-end" value' + s;
             }
@@ -407,6 +529,16 @@ var dia = (function() {
             }
         }
 
+        /** Checks if blocks' relId and lines' startBlockId and endBlockId 
+         * reffers to blocks from current diagram. Sets id property to each
+         * block with the value equal to its index in array. On success, 
+         * values of the properties specified above will be replaced by 
+         * the resp. id (indexes in array).
+         *
+         * @param {Array.<blocks>} blocks diagram's blocks
+         * @param {Array.<lines>} lines diagram's lines
+         * @throws {String} error message when id doesn't belong to current diagram
+         */
         function checkIdScope_(blocks, lines) {
             for (var i = 0; i < blocks.length; i++) {
                 blocks[i].id = i;
@@ -429,17 +561,29 @@ var dia = (function() {
 
             for (var i = 0; i < blocks.length; i++) {
                 if (typeof (blocks[i].relId) == 'string')
-                    throw blocks[i].domId + ': #' + blocks[i].relId + ' doesn\'t belong to diagram';
+                    throw blocks[i].domId + ': #' + blocks[i].relId +
+                        ' doesn\'t belong to diagram';
             }
 
             for (var i = 0; i < lines.length; i++) {
-                if (typeof (lines[i].startBlockId) != 'number')
-                    throw line[i].domId + ': id #' + lines[i].startBlockId + ' doesn\'t belong to diagram';
-                if (typeof (lines[i].endBlockId) != 'number')
-                    throw line[i].domId + ': id #' + lines[i].endBlockId + ' doesn\'t belong to diagram';
+                if (typeof (lines[i].startBlockId) != 'number') {
+                    throw line[i].domId + ': id #' + lines[i].startBlockId +
+                        ' doesn\'t belong to diagram';
+                }
+                if (typeof (lines[i].endBlockId) != 'number') {
+                    throw line[i].domId + ': id #' + lines[i].endBlockId +
+                        ' doesn\'t belong to diagram';
+                }
             }
         }
 
+        /** Calculates rectangle block size. The size is calculated 
+         * according to block's proportions or min. size and is greater 
+         * than the size of block's text
+         *
+         * @param {block} block block
+         * @return {size} size  
+         */
         function rectSize_(block) {
             var text = getTextSize_(block.elem);
 
@@ -463,6 +607,13 @@ var dia = (function() {
                 return new size(text.h * p, text.h);
         }
 
+        /** Calculates ellipse block size. The size is calculated 
+         * according to block's proportions or min. size and is greater 
+         * than the size of block's text
+         *
+         * @param {block} block block
+         * @return {size} size  
+         */
         function ellipseSize_(block) {
             var text = getTextSize_(block.elem);
 
@@ -470,8 +621,11 @@ var dia = (function() {
                 return new size(Math.sqrt(2) * text.w, Math.sqrt(2) * text.h);
 
             if (block.minSize != null) {
-                if (Math.sqrt(2) * text.w < block.minSize.w && Math.sqrt(2) * text.h < block.minSize.h)
+                if (Math.sqrt(2) * text.w < block.minSize.w
+                    && Math.sqrt(2) * text.h < block.minSize.h) 
+                {
                     return block.minSize;
+                }
 
                 return new size(Math.sqrt(2) * text.w, Math.sqrt(2) * text.h);
             }
@@ -488,6 +642,10 @@ var dia = (function() {
             return s;
         }
 
+        /** Caclulates image size and blocks' absolute positions
+         * @throws {String} Error message if there are blocks overlaping 
+         * each other
+         */
         function blocksPos_(cfg, blocks) {
             blocksRelPos_(cfg, blocks);
             blocksAbsPos_(cfg, blocks);
@@ -499,6 +657,9 @@ var dia = (function() {
             }
         }
 
+        /** Caclulates blocks positions relative to the first block in array
+         * or to the block without 'dia-pos' attribute.
+         */
         function blocksRelPos_(cfg, blocks) {
             for (var i = 0; i < blocks.length; i++) {
                 if (blocks[i].relId !== undefined)
@@ -514,7 +675,8 @@ var dia = (function() {
 
             for (var i = 0; i < blocks.length; i++) { 
                 for (var j = 0; j < blocks.length; j++) { 
-                    if (blocks[j].relId == undefined) // pivot or block with abs position
+                    // pivot or block with abs position
+                    if (blocks[j].relId == undefined) 
                         continue;
                     if (blocks[j].relId != blocks[i].id)
                         continue;
@@ -522,16 +684,20 @@ var dia = (function() {
                     //Координаты блока j = 
                     //     коорд i
                     //     + расстояние между центрами по одной из компонент
-                    //     + смещение (выравнивание) по другой
+                    //     + aligment (выравнивание) по другой
 
                     var x = blocks[i].coords.x + 
-                        blocks[j].relPos.x * (blocks[i].size.w / 2 + blocks[j].relDist + blocks[j].size.w / 2) +
-                        (blocks[j].alignCur * blocks[j].size.w + blocks[j].alignRel * blocks[i].size.w) 
+                        blocks[j].relPos.x * (blocks[i].size.w / 2 
+                            + blocks[j].relDist + blocks[j].size.w / 2) +
+                        (blocks[j].alignCur * blocks[j].size.w 
+                            + blocks[j].alignRel * blocks[i].size.w) 
                         * (1 - Math.abs(blocks[j].relPos.x));
 
                     var y = blocks[i].coords.y + 
-                        blocks[j].relPos.y * (blocks[i].size.h / 2 + blocks[j].relDist + blocks[j].size.h / 2) +
-                        (blocks[j].alignCur * blocks[j].size.h + blocks[j].alignRel * blocks[i].size.h)
+                        blocks[j].relPos.y * (blocks[i].size.h / 2 
+                            + blocks[j].relDist + blocks[j].size.h / 2) +
+                        (blocks[j].alignCur * blocks[j].size.h 
+                            + blocks[j].alignRel * blocks[i].size.h)
                         * (1 - Math.abs(blocks[j].relPos.y));
 
                     blocks[j].coords = new point(x, y);
@@ -539,7 +705,12 @@ var dia = (function() {
             }
         }
 
+        /** Caclulates blocks positions relative to the image top left corner.
+         * Sets image size.
+         */
         function blocksAbsPos_(cfg, blocks) {
+            // top left and bottom right image coordinates relative to the 
+            // first block
             var left = Number.MAX_VALUE;
             var right = -Number.MAX_VALUE;
             var top_ = Number.MAX_VALUE;
@@ -577,6 +748,10 @@ var dia = (function() {
                 });
         }
 
+        /** Checks if there is two blocks overlapping each other
+         *
+         * @throws {String} Error message if there are blocks overlaping
+         */
         function checkOverlaps_(cfg, blocks) {
             for (var i = 0; i < blocks.length; i++) { 
                 for (var j = i + 1; j < blocks.length; j++) { 
@@ -594,6 +769,8 @@ var dia = (function() {
             }
         }
 
+        /* Draws blocks by setting CSS values to resp. DOM elements
+         */
         function drawBlocks_(cfg, blocks) {
             $(cfg.elem).css({'width': cfg.imgSize.w});
             $(cfg.elem).css({'height': cfg.imgSize.h});
@@ -623,19 +800,28 @@ var dia = (function() {
                 });
         }
 
+        function findBlock_(blocks, id) {
+            for (var i = 0; i < blocks.length; i++) {
+                if (blocks[i].id == id)
+                    return blocks[i];
+            }
+            return undefined;
+        }
+
         function linesPos_(cfg, blocks, lines) {
             var g = new grid(cfg, blocks);
             fillGrid_(g, blocks);
-
+            
             $.each(lines, function(i, line) {
-                    var stB = blocks[line.startBlockId];
-                    var stX = stB.coords.x + 0.5 * stB.size.w * line.startBlockPos.x;
-                    var stY = stB.coords.y + 0.5 * stB.size.h * line.startBlockPos.y;
+                    // XXX 
+                    var s = findBlock_(blocks, line.startBlockId);
+                    var stX = s.coords.x + 0.5 * s.size.w * line.startBlockPos.x;
+                    var stY = s.coords.y + 0.5 * s.size.h * line.startBlockPos.y;
                     var start = new point(Math.round(stX / g.h), Math.round(stY / g.h));
 
-                    var enB = blocks[line.endBlockId];
-                    var enX = enB.coords.x + 0.5 * enB.size.w * line.endBlockPos.x;
-                    var enY = enB.coords.y + 0.5 * enB.size.h * line.endBlockPos.y;
+                    var e = findBlock_(blocks, line.endBlockId);
+                    var enX = e.coords.x + 0.5 * e.size.w * line.endBlockPos.x;
+                    var enY = e.coords.y + 0.5 * e.size.h * line.endBlockPos.y;
                     var end = new point(Math.round(enX / g.h), Math.round(enY / g.h));
 
                     line.points = findPath(g, start, end);
@@ -939,7 +1125,6 @@ var dia = (function() {
                     $(l.elem).css({'-o-transform': 'rotate(-90deg)'});
                     $(l.elem).css({'filter': 'progid:DXImageTransform.Microsoft.BasicImage(rotation=3)'});
                 }
-
 
                 $(l.elem).css({'top': l.capCoords.y});
                 $(l.elem).css({'left': l.capCoords.x});
