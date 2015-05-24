@@ -5,7 +5,8 @@ var dia = (function() {
             gridSize: 10,
             imgSize: null,
             elem: null,
-            id: null
+            id: null,
+            capOffset: 2
         };
 
         var type = { line: 0, rect: 1, ellipse: 2 };
@@ -77,6 +78,10 @@ var dia = (function() {
             linesPos_();
 
             drawLines_();
+
+            linesCaps_();
+
+            drawCaps_();
 
             // for (var i = 0; i < blocks.length; i++)
             //     console.log(blocks[i]);
@@ -754,6 +759,8 @@ var dia = (function() {
             }
             p.push(new point(cur.x * grid.h, cur.y * grid.h));
 
+            p.reverse();
+
             return p; 
         }
 
@@ -773,7 +780,7 @@ var dia = (function() {
             $.each(lines, function(i, line) {
                     ctx.beginPath();
                     // ctx.strokeStyle = '#f0f';
-                    ctx.lineWidth = 1;
+                    ctx.lineWidth = line.lineWidth;
                     
                     var prev = line.points[0];
                     ctx.moveTo(prev.x, prev.y);
@@ -789,10 +796,131 @@ var dia = (function() {
                     }
                     ctx.stroke();
                 });
+        }
 
-            // ctx.beginPath();
-            // ctx.lineWidth = 1;
-            // ctx.moveTo(0, 0);
+        function lineCapPos(line) {
+            var p;
+            var dx, dy;
+            if (line.capPos == capPos.start) {
+                p = line.points[0];
+
+                dx = line.points[1].x - line.points[0].x;
+                dy = line.points[1].y - line.points[0].y;
+
+            } else if (line.capPos == capPos.end) {
+                var n = line.points.length - 1;
+
+                p = line.points[n];
+
+                dx = line.points[n - 1].x - line.points[n].x;
+                dy = line.points[n - 1].y - line.points[n].y;
+            } else if (line.capPos == capPos.center) {
+                var len = 0;
+                for (var i = 1; i < line.points.length; i++)
+                    len += line.points[i].manh(line.points[i - 1]);
+
+                var l = 0;
+                var s;
+                for (s = 1; s < line.points.length; s++) {
+                    var ll = line.points[s].manh(line.points[s - 1]);
+                    if (l + ll >= (len / 2))
+                        break;
+                    l += ll;
+                }
+
+                dx = line.points[s].x - line.points[s - 1].x;
+                dy = line.points[s].y - line.points[s - 1].y;
+
+                p = new point();
+                $.extend(p, line.points[s - 1]);
+                if (dx < 0)
+                    p.x -= len / 2 - l; 
+                else if (dx > 0)
+                    p.x += len / 2 - l; 
+                if (dy < 0)
+                    p.y -= len / 2 - l; 
+                else if (dy > 0)
+                    p.y += len / 2 - l; 
+            }
+
+            var x;
+            var y;
+            var e = cfg.capOffset;
+            var text = getTextSize_(line.elem);
+            if (line.capDir == capDir.ver) {
+                text = new size(text.h, text.w);
+            }
+
+            if (line.capPos != capPos.center) {
+                if (dx != 0) {
+                    if (dx > 0) 
+                        x = p.x + e;
+                    if (dx < 0) 
+                        x = p.x - e - text.w;
+                    if (line.capDir == capDir.hor)
+                        y = p.y - e - text.h;
+                    if (line.capDir == capDir.ver)
+                        y = p.y - text.h / 2;
+                }
+                if (dy != 0) {
+                    if (dy > 0)
+                        y = p.y + e;
+                    if (dy < 0)
+                        y = p.y - e - text.h;
+                    if (line.capDir == capDir.hor)
+                        x = p.x - text.w / 2;
+                    if (line.capDir == capDir.ver) 
+                        x = p.x - e - text.w;
+                }
+            } else {
+                if (line.capDir == capDir.hor) {
+                    x = p.x - text.w / 2;
+                    if (dx != 0) 
+                        y = p.y - e - text.h;
+                    if (dy != 0) 
+                        y = p.y - text.h / 2;
+                } else {
+                    y = p.y - text.h / 2;
+                    if (dx != 0)
+                        x = p.x - text.w / 2;
+                    if (dy != 0)
+                        x = p.x - e - text.w;
+                }
+            }
+
+            if (line.capDir == capDir.ver) {
+                x = x - text.w - e;
+                y = y + text.w + e;
+            }
+
+            line.capCoords = new point(x, y);
+        }
+
+        function linesCaps_() {
+            $.each(lines, function(i, line) {
+                    if (!$(line.elem).is(':empty'))
+                        lineCapPos(line);
+                });
+        }
+
+        function drawCaps_() {
+            for (var i = 0; i < lines.length; i++) {
+                var l = lines[i];
+                if (!('capCoords' in l))
+                    continue;
+
+                if (l.capDir == capDir.ver) {
+                    $(l.elem).css({'-webkit-transform': 'rotate(-90deg)'});
+                    $(l.elem).css({'-moz-transform': 'rotate(-90deg)'});
+                    $(l.elem).css({'-ms-transform': 'rotate(-90deg)'});
+                    $(l.elem).css({'-o-transform': 'rotate(-90deg)'});
+                    $(l.elem).css({'filter': 'progid:DXImageTransform.Microsoft.BasicImage(rotation=3)'});
+                }
+
+
+                $(l.elem).css({'top': l.capCoords.y});
+                $(l.elem).css({'left': l.capCoords.x});
+            }
         }
 
         return pub;
