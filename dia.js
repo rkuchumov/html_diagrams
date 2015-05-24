@@ -1,46 +1,56 @@
 var dia = (function() { 
         var pub = {};
 
-        var cfg = {
-            gridSize: 10,
-            imgSize: null,
-            elem: null,
-            id: null,
-            capOffset: 2
+        var type = { 
+            line: 0,
+            rect: 1,
+            ellipse: 2,
         };
 
-        var type = { line: 0, rect: 1, ellipse: 2 };
-        var lineEndShape = { none: 0, angle: 1, rhombus: 2, circle: 3, triangle: 4 };
-        var capDir = { hor: 0, ver: 1 };
-        var capPos = { start: 0, center: 1, end: 2 };
-        var lineStyle = { solid: 0, dotted: 1, dashed: 2 };
+        var lineEndShape = { 
+            none: 0,
+            angle: 1,
+            rhombus: 2, 
+            circle: 3,
+            triangle: 4,
+        };
 
-        var blocks = [];
-        var lines = [];
+        var capDir = {
+            hor: 0,
+            ver: 1,
+        };
+
+        var capPos = {
+            start: 0,
+            center: 1,
+            end: 2,
+        };
+
+        var lineStyle = { 
+            solid: 0,
+            dotted: 1,
+            dashed: 2,
+        };
+
+        function isNum_(str) {
+            return str.match(/^\d+$/);
+        }
+
+        function getTextSize_(elem) {
+            var w = (elem.clientWidth + 1);
+            var h = (elem.clientHeight + 1);
+            return new size(w, h);
+        }
 
         function point(x, y) {
             this.x = x;
             this.y = y;
 
-            this.manh = function(x, y) {
+            this.dist = function(x, y) {
                 if (arguments.length == 1) {
                     return Math.abs(this.x - x.x) + Math.abs(this.y - x.y);
                 } else if (arguments.length == 2) {
                     return Math.abs(this.x - x) + Math.abs(this.y - y);
-                }
-                return undefined;
-            }
-
-            this.euclid = function(x, y) {
-                if (arguments.length == 1) {
-                    return Math.sqrt(
-                        (this.x - x.x)*(this.x - x.x) 
-                        + (this.y - x.y)*(this.y - x.y)
-                    );
-                } else if (arguments.length == 2) {
-                    return Math.sqrt(
-                        (this.x - x)*(this.x - x) + (this.y - y)*(this.y - y)
-                    );
                 }
                 return undefined;
             }
@@ -51,45 +61,58 @@ var dia = (function() {
             this.h = h;
         }
 
-        function isNum(str) {
-            return str.match(/^\d+$/);
-        }
+        function config(elem) {
+            this.elem = elem;
+            this.gridSize = 10;
+            this.capOffset = 2;
 
-        pub.draw = function(diaId) {
-            blocks = [];
-            lines = [];
-            cfg.id = diaId;
-            cfg.elem = $('#' + diaId);
+            var attribs = getAttribs_(elem);
 
-            try {
-                parseDescr_();
-
-                blocksPos_();
-            } catch (e) {
-                console.log('#' + diaId + ': ' + e);
+            if ('dia-grid-size' in attribs) {
+                var i = parseInt(attribs['dia-grid-size']);
+                if (i > 0)
+                    this.gridSize = i;
+                else
+                    throw 'Incorrect "dia-grid-size" value';
             }
 
-            $(cfg.elem).css({'width': cfg.imgSize.w});
-            $(cfg.elem).css({'height': cfg.imgSize.h});
-            $(cfg.elem).css({'position': 'relative'});
+            if ('dia-caption-offset' in attribs) {
+                var i = parseInt(attribs['dia-caption-offset']);
+                if (i > 0)
+                    this.capOffset = i;
+                else
+                    throw 'Incorrect "dia-caption-offset" value';
+            }
 
-            drawBlocks_();
+            this.id = attribs['id'];
 
-            linesPos_();
-
-            drawLines_();
-
-            linesCaps_();
-
-            drawCaps_();
-
-            // for (var i = 0; i < blocks.length; i++)
-            //     console.log(blocks[i]);
-            // for (var i = 0; i < lines.length; i++)
-            //     console.log(lines[i]);
+            this.imgSize = null;
         }
 
-        function setDivDefaultCSS(elem) {
+        pub.draw = function(id) {
+            var cfg = new config($('#' + id)[0]);
+            var blocks = [];
+            var lines = [];
+
+            try {
+                var r = parseDescr_(cfg);
+                blocks = r.blocks;
+                lines = r.lines;
+
+                blocksPos_(cfg, blocks);
+                drawBlocks_(cfg, blocks);
+
+                linesPos_(cfg, blocks, lines);
+                drawLines_(cfg, lines);
+
+                captionsPos_(cfg, lines);
+                drawCaptions_(cfg, lines);
+            } catch (e) {
+                console.log('#' + id + ': ' + e);
+            }
+        }
+
+        function setDivDefaultCSS_(elem) {
             $(elem).css({'position': 'absolute'});
             $(elem).css({'height': 'auto'});
             $(elem).css({'width': 'auto'});
@@ -98,31 +121,34 @@ var dia = (function() {
             $(elem).css({'text-align': 'center'});
         }
 
-        function parseDescr_() {
-            cfg.elem.children().each(function(id, e) {
+        function parseDescr_(cfg) {
+            var blocks = [];
+            var lines = [];
+            $(cfg.elem).children().each(function(id, e) {
                     try {
-                        setDivDefaultCSS(e);
+                        setDivDefaultCSS_(e);
+
                         var attribs = getAttribs_(e);
                         delete getType_.hasPivot;
                         var t = getType_(attribs);
 
                         if (t != type.line) {
-                            var b = new block(attribs, e);
-                            blocks.push(b);
+                            blocks.push(new block(attribs, e));
                         } else {
-                            var l = new line(attribs, e);
-                            lines.push(l);
+                            lines.push(new line(attribs, e));
                         }
-                    } catch (str) {
+                    } catch(str) {
                         throw '#' + attribs.id + ': ' + str;
                     }
                 });
 
             try {
-                checkIdScope();
+                checkIdScope_(blocks, lines);
             } catch (e) {
                 throw e;
             }
+
+            return {'blocks': blocks, 'lines': lines};
         }
 
         function getAttribs_(elem) {
@@ -242,7 +268,7 @@ var dia = (function() {
 
                 if (a[0].substr(-2) == 'px' && a[1].substr(-2) == 'px') {
                     this.minSize = new size(w, h);
-                } else if (isNum(a[0]) && isNum(a[1]) && w > 0 && h > 0) {
+                } else if (isNum_(a[0]) && isNum_(a[1]) && w > 0 && h > 0) {
                     this.prop = w / h;
                 } else {
                     throw 'Incorrect "dia-size" value';
@@ -381,7 +407,7 @@ var dia = (function() {
             }
         }
 
-        function checkIdScope() {
+        function checkIdScope_(blocks, lines) {
             for (var i = 0; i < blocks.length; i++) {
                 blocks[i].id = i;
 
@@ -412,12 +438,6 @@ var dia = (function() {
                 if (typeof (lines[i].endBlockId) != 'number')
                     throw line[i].domId + ': id #' + lines[i].endBlockId + ' doesn\'t belong to diagram';
             }
-        }
-
-        function getTextSize_(elem) {
-            var w = (elem.clientWidth + 1);
-            var h = (elem.clientHeight + 1);
-            return new size(w, h);
         }
 
         function rectSize_(block) {
@@ -468,18 +488,18 @@ var dia = (function() {
             return s;
         }
 
-        function blocksPos_() {
-            blocksRelPos_();
-            blocksAbsPos_();
+        function blocksPos_(cfg, blocks) {
+            blocksRelPos_(cfg, blocks);
+            blocksAbsPos_(cfg, blocks);
 
             try {
-                checkOverlaps_();
+                checkOverlaps_(cfg, blocks);
             } catch (e) {
                 throw e;
             }
         }
 
-        function blocksRelPos_() {
+        function blocksRelPos_(cfg, blocks) {
             for (var i = 0; i < blocks.length; i++) {
                 if (blocks[i].relId !== undefined)
                     continue;
@@ -519,7 +539,7 @@ var dia = (function() {
             }
         }
 
-        function blocksAbsPos_() {
+        function blocksAbsPos_(cfg, blocks) {
             var left = Number.MAX_VALUE;
             var right = -Number.MAX_VALUE;
             var top_ = Number.MAX_VALUE;
@@ -557,7 +577,7 @@ var dia = (function() {
                 });
         }
 
-        function checkOverlaps_() {
+        function checkOverlaps_(cfg, blocks) {
             for (var i = 0; i < blocks.length; i++) { 
                 for (var j = i + 1; j < blocks.length; j++) { 
                     var x1 = blocks[i].coords.x;
@@ -574,7 +594,11 @@ var dia = (function() {
             }
         }
 
-        function drawBlocks_() {
+        function drawBlocks_(cfg, blocks) {
+            $(cfg.elem).css({'width': cfg.imgSize.w});
+            $(cfg.elem).css({'height': cfg.imgSize.h});
+            $(cfg.elem).css({'position': 'relative'});
+
             $.each(blocks, function(i, block) {
                     var top_ = block.coords.y - block.size.h / 2;
                     var left = block.coords.x - block.size.w / 2;
@@ -599,8 +623,9 @@ var dia = (function() {
                 });
         }
 
-        function linesPos_() {
-            var g = new grid();
+        function linesPos_(cfg, blocks, lines) {
+            var g = new grid(cfg, blocks);
+            fillGrid_(g, blocks);
 
             $.each(lines, function(i, line) {
                     var stB = blocks[line.startBlockId];
@@ -617,7 +642,7 @@ var dia = (function() {
                 });
         }
 
-        function grid() {
+        function grid(cfg) {
             this.h = cfg.gridSize;
             this.n = cfg.imgSize.w / this.h + 1;
             this.m = cfg.imgSize.h / this.h + 1;
@@ -653,11 +678,9 @@ var dia = (function() {
                 var x = id % this.n;
                 return new point(x, y);
             }
-
-            fillGrid(this);
         }
 
-        function fillGrid(grid) {
+        function fillGrid_(grid, blocks) {
             for (var j = 0; j < grid.m; j++)
                 for (var i = 0; i < grid.n; i++)
                     grid.setEmpty(i, j, true);
@@ -697,7 +720,7 @@ var dia = (function() {
             if (parents == null)
                 return null;
 
-            return restorePath(grid, parents, start, end);
+            return restorePath_(grid, parents, start, end);
         }
 
         function bfs(grid, start, end) {
@@ -736,7 +759,7 @@ var dia = (function() {
             return path;
         }
 
-        function restorePath(grid, path, start, end) {
+        function restorePath_(grid, path, start, end) {
             var prev = end;
             var cur = grid.node(path[grid.id(prev)]);
 
@@ -764,7 +787,7 @@ var dia = (function() {
             return p; 
         }
 
-        function drawLines_() {
+        function drawLines_(cfg, lines) {
             var id = cfg.id + 'Canvas';
             var can = '<canvas ' + 
                 'id="' + id + '" ' + 
@@ -798,7 +821,7 @@ var dia = (function() {
                 });
         }
 
-        function lineCapPos(line) {
+        function caprionPos_(cfg, line) {
             var p;
             var dx, dy;
             if (line.capPos == capPos.start) {
@@ -817,12 +840,12 @@ var dia = (function() {
             } else if (line.capPos == capPos.center) {
                 var len = 0;
                 for (var i = 1; i < line.points.length; i++)
-                    len += line.points[i].manh(line.points[i - 1]);
+                    len += line.points[i].dist(line.points[i - 1]);
 
                 var l = 0;
                 var s;
                 for (s = 1; s < line.points.length; s++) {
-                    var ll = line.points[s].manh(line.points[s - 1]);
+                    var ll = line.points[s].dist(line.points[s - 1]);
                     if (l + ll >= (len / 2))
                         break;
                     l += ll;
@@ -896,14 +919,14 @@ var dia = (function() {
             line.capCoords = new point(x, y);
         }
 
-        function linesCaps_() {
+        function captionsPos_(cfg, lines) {
             $.each(lines, function(i, line) {
                     if (!$(line.elem).is(':empty'))
-                        lineCapPos(line);
+                        caprionPos_(cfg, line);
                 });
         }
 
-        function drawCaps_() {
+        function drawCaptions_(cfg, lines) {
             for (var i = 0; i < lines.length; i++) {
                 var l = lines[i];
                 if (!('capCoords' in l))
