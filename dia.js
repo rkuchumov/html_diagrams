@@ -5,7 +5,7 @@ var dia = (function() {
          * @readonly
          * @enum {Number}
          */
-        var type = { 
+        var Type = { 
             line: 0,
             rect: 1,
             ellipse: 2,
@@ -15,7 +15,7 @@ var dia = (function() {
          * @readonly
          * @enum {Number}
          */
-        var lineEndShape = { 
+        var LineEnd = { 
             /** Straight line */
             none: 0,
             /** Angle bracket (<, >) */ 
@@ -29,7 +29,7 @@ var dia = (function() {
          * @readonly
          * @enum {Number}
          */
-        var capDir = {
+        var CapDir = {
             /** Horizontal */
             hor: 0,
             /** Vertical */
@@ -40,13 +40,13 @@ var dia = (function() {
          * @readonly
          * @enum {Number}
          */
-        var capPos = {
+        var CapPos = {
             start: 0,
             center: 1,
             end: 2,
         };
 
-        var lineStyle = { 
+        var LineStyle = { 
             solid: 0,
             dotted: 1,
             dashed: 2,
@@ -137,7 +137,7 @@ var dia = (function() {
          * blocks' positions are calulated 
          * @throws {String} Error message on incorrect attributes values
          */
-        function config(elem) {
+        function Config(elem) {
             this.elem = elem;
             this.gridSize = 10;
             this.capOffset = 2;
@@ -170,7 +170,7 @@ var dia = (function() {
          */
         pub.draw = function(id) {
             try {
-                var cfg = new config($('#' + id)[0]);
+                var cfg = new Config($('#' + id)[0]);
 
                 var blocks = [];
                 var lines = [];
@@ -202,9 +202,9 @@ var dia = (function() {
 
         /** Travels diagram's child objects(DOM) and creates line or block instance 
          * for each object. 
-         * @param {config} cfg diagram config instance
+         * @param {Config} cfg diagram config instance
          * @throws {String} error message (parsing error or out-of-scope id error)
-         * @return {{blocks: Array.<block>, lines: Array.<line>}} Block and lines arrays
+         * @return {{blocks: Array.<Block>, lines: Array.<Line>}} Block and lines arrays
          */
         function parseDescr_(cfg) {
             var blocks = [];
@@ -217,10 +217,10 @@ var dia = (function() {
                         delete getType_.hasPivot;
                         var t = getType_(attribs);
 
-                        if (t != type.line) {
-                            blocks.push(new block(attribs, e));
+                        if (t != Type.line) {
+                            blocks.push(new Block(attribs, e));
                         } else {
-                            lines.push(new line(attribs, e));
+                            lines.push(new Line(attribs, e));
                         }
                     } catch(str) {
                         throw '#' + attribs.id + ': ' + str;
@@ -239,17 +239,17 @@ var dia = (function() {
         /** Determines type of diagram object (line, rectangle, ellipse)
          * by its attributes
          * @param {Object<String, String>} atrributes' name and values
-         * @return {type} type of an object
+         * @return {Type} type of an object
          * @throws {String} error message when unable to detemine type
          * @property {Boolean} hasPivot true, if block without relative
          * position found
          */
         function getType_(attribs) {
             if (('dia-line-start' in attribs) && ('dia-line-end' in attribs))
-                return type.line;
+                return Type.line;
 
             if (attribs['dia-type'] == 'line')
-                return type.line;
+                return Type.line;
 
             var hasPos = ('dia-pos' in attribs);
             var hasPivot = ('hasPivot' in getType_);
@@ -259,12 +259,12 @@ var dia = (function() {
                     getType_.hasPivot = true;
 
                 if (!('dia-type' in attribs))
-                    return type.rect;
+                    return Type.rect;
 
                 if (attribs['dia-type'] == 'rectangle')
-                    return type.rect;
+                    return Type.rect;
                 if (attribs['dia-type'] == 'ellipse')
-                    return type.ellipse;
+                    return Type.ellipse;
 
                 throw 'Unknown "dia-type" value';
             } 
@@ -273,6 +273,7 @@ var dia = (function() {
         }
 
         /** Creates block instance
+         * @constructor
          * @param {Object<String, String>} blocks attributes
          * @param {Element} DOM object containing specified attributes
          * @property {Element} elem an object describing this block
@@ -283,22 +284,25 @@ var dia = (function() {
          * @property {Number} [alignRel=0] an axis of relId block corresponding 
          * to the digit in 'dia-aling' attribute. Possible values: -0.5, 0, 0.5
          * for 3, 2, 1 axes
-         * @property {type} [type=type.rect] block type (rectangle, ellispse)
+         * @property {Type} [type=Type.rect] block type (rectangle, ellispse)
          * @property {String} domId id of DOM element describing this block
          * @property {point} relPos position of this block relative to relId block
-         * @property {size} calculated block's size
+         * @property {size} size calculated block's size
          * @property {coords} block's absolute position
+         * @proprty {Number} relId id of a block used for relative postioning 
+         * and aligment 
+         * @proprty {Number} prop proportions (width / height)
          * @throws {String} an error message if unable to parse attribute's value
          */
-        function block(attribs, e) {
+        function Block(attribs, e) {
             this.elem = e;
             this.relDist = 20;
             this.alignCur = 0;
             this.alignRel = 0;
 
-            this.type = type.rect;
+            this.type = Type.rect;
             if (attribs['dia-type'] == 'ellipse')
-                this.type = type.ellipse;
+                this.type = Type.ellipse;
 
             this.domId = attribs['id'];
 
@@ -389,9 +393,9 @@ var dia = (function() {
                 }
             }
 
-            if (this.type == type.rect) {
+            if (this.type == Type.rect) {
                 this.size = rectSize_(this);
-            } else if (this.type == type.ellipse) {
+            } else if (this.type == Type.ellipse) {
                 this.size = ellipseSize_(this);
             }
         }
@@ -400,26 +404,32 @@ var dia = (function() {
          * @param {Object<String, String>} line attributes
          * @param {Element} DOM object containing specified attributes
          * @property {Element} elem an object describing this line
-         * @property {lineEndShape} [startStyle=lineEndShape.none] 
+         * @property {Number} startBlockId id of a block this line starts from
+         * @property {Number} endBlockId id of a block this line ends
+         * @property {LineEnd} [startStyle=LineEnd.none] 
          * style at the beginning of the line
-         * @property {lineEndShape} [endStyle=lineEndShape.none] 
+         * @property {Point} startBlockPos position of the beginning of the line
+         * at the starting block
+         * @property {Point} endBlockPos position of the beginning of the line
+         * at the starting block
+         * @property {LineEnd} [endStyle=LineEnd.none] 
          * style at the end of the line
-         * @property {capPos} [capPos=capPos.center] caption position
-         * @property {capDir} [capDir=capDir.hor] caption direction
+         * @property {CapPos} [capPos=CapPos.center] caption position
+         * @property {CapDir} [capDir=CapDir.hor] caption direction
          * @property {Number} [lineWidth=1] line width
-         * @property {lineStyle} [lineStyle=lineStyle.solid] line style
+         * @property {lineStyle} [lineStyle=LineStyle.solid] line style
          * @property {String} [lineColor='black'] line color
          * @property {String} domId id of DOM element describing this line
          * @throws {String} an error message if unable to parse attribute's value
          */
-        function line(attribs, e) {
+        function Line(attribs, e) {
             this.elem = e;
-            this.startStyle = lineEndShape.none;
-            this.endStyle = lineEndShape.none;
-            this.capPos = capPos.center;
-            this.capDir = capDir.hor;
+            this.startStyle = LineEnd.none;
+            this.endStyle = LineEnd.none;
+            this.capPos = CapPos.center;
+            this.capDir = CapDir.hor;
             this.lineWidth = 1;
-            this.lineStyle = lineStyle.solid;
+            this.lineStyle = LineStyle.solid;
             this.lineColor = "black";
             this.domId = attribs['id'];
 
@@ -428,10 +438,10 @@ var dia = (function() {
              * @return {Object} ret parsed value
              * @return {String} ret.id id of an end block
              * @return {point} ret.pos line's end position 
-             * @return {lineEndShape} ret.sh line's end style
+             * @return {LineEnd} ret.sh line's end style
              * @throws {String} an error message if unable to parse attribute's value
              */
-            function lineEnd(str) {
+            function lineEnd_(str) {
                 var ret = {};
                 var a = str.split('+');
 
@@ -456,11 +466,11 @@ var dia = (function() {
 
                 var sh;
                 switch (a[2]) {
-                case 'none': sh = lineEndShape.none; break;
-                case 'angle': sh = lineEndShape.angle; break;
-                case 'rhombus': sh = lineEndShape.rhombus; break;
-                case 'circle': sh = lineEndShape.circle; break;
-                case 'triangle': sh = lineEndShape.triangle; break;
+                case 'none': sh = LineEnd.none; break;
+                case 'angle': sh = LineEnd.angle; break;
+                case 'rhombus': sh = LineEnd.rhombus; break;
+                case 'circle': sh = LineEnd.circle; break;
+                case 'triangle': sh = LineEnd.triangle; break;
                 case undefined: sh = null; break;
                 default: throw 'end style';
                 }
@@ -470,7 +480,7 @@ var dia = (function() {
             }
 
             try {
-                var s = lineEnd(attribs['dia-line-start']);
+                var s = lineEnd_(attribs['dia-line-start']);
                 this.startBlockId = s.id;
                 this.startBlockPos = s.pos;
                 if (s.sh != null)
@@ -480,7 +490,7 @@ var dia = (function() {
             }
 
             try {
-                var e = lineEnd(attribs['dia-line-end']);
+                var e = lineEnd_(attribs['dia-line-end']);
                 this.endBlockId = e.id;
                 this.endBlockPos = e.pos;
                 if (e.sh != null)
@@ -491,16 +501,16 @@ var dia = (function() {
 
 
             switch (attribs['dia-direction']) {
-            case 'hor': this.capDir = capDir.hor; break;
-            case 'ver': this.capDir = capDir.ver; break;
+            case 'hor': this.capDir = CapDir.hor; break;
+            case 'ver': this.capDir = CapDir.ver; break;
             case undefined: break;
             default: throw 'Incorrect "dia-direction" value';
             }
 
             switch (attribs['dia-text-pos']) {
-            case 'center': this.capPos = capPos.center; break;
-            case 'start': this.capPos = capPos.start; break;
-            case 'end': this.capPos = capPos.end; break;
+            case 'center': this.capPos = CapPos.center; break;
+            case 'start': this.capPos = CapPos.start; break;
+            case 'end': this.capPos = CapPos.end; break;
             case undefined: break;
             default: throw 'Incorrect "dia-text-pos" value';
             }
@@ -516,9 +526,9 @@ var dia = (function() {
 
                 if (a.length > 1) {
                     switch (a[1]) {
-                    case 'solid': this.lineStyle = lineStyle.solid; break;
-                    case 'dotter': this.lineStyle = lineStyle.dotted; break;
-                    case 'dashed': this.lineStyle = lineStyle.dashed; break;
+                    case 'solid': this.lineStyle = LineStyle.solid; break;
+                    case 'dotter': this.lineStyle = LineStyle.dotted; break;
+                    case 'dashed': this.lineStyle = LineStyle.dashed; break;
                     default: throw 'Incorrect "dia-line-style" value';
                     }
                 }
@@ -535,8 +545,8 @@ var dia = (function() {
          * values of the properties specified above will be replaced by 
          * the resp. id (indexes in array).
          *
-         * @param {Array.<blocks>} blocks diagram's blocks
-         * @param {Array.<lines>} lines diagram's lines
+         * @param {Array.<Block>} blocks diagram's blocks
+         * @param {Array.<Line>} lines diagram's lines
          * @throws {String} error message when id doesn't belong to current diagram
          */
         function checkIdScope_(blocks, lines) {
@@ -567,11 +577,11 @@ var dia = (function() {
 
             for (var i = 0; i < lines.length; i++) {
                 if (typeof (lines[i].startBlockId) != 'number') {
-                    throw line[i].domId + ': id #' + lines[i].startBlockId +
+                    throw lines[i].domId + ': id #' + lines[i].startBlockId +
                         ' doesn\'t belong to diagram';
                 }
                 if (typeof (lines[i].endBlockId) != 'number') {
-                    throw line[i].domId + ': id #' + lines[i].endBlockId +
+                    throw lines[i].domId + ': id #' + lines[i].endBlockId +
                         ' doesn\'t belong to diagram';
                 }
             }
@@ -581,7 +591,7 @@ var dia = (function() {
          * according to block's proportions or min. size and is greater 
          * than the size of block's text
          *
-         * @param {block} block block
+         * @param {Block} block block
          * @return {size} size  
          */
         function rectSize_(block) {
@@ -611,7 +621,7 @@ var dia = (function() {
          * according to block's proportions or min. size and is greater 
          * than the size of block's text
          *
-         * @param {block} block block
+         * @param {Block} block block
          * @return {size} size  
          */
         function ellipseSize_(block) {
@@ -785,7 +795,7 @@ var dia = (function() {
                     $(block.elem).css({'width': block.size.w});
                     $(block.elem).css({'height': block.size.h});
 
-                    if (block.type == type.ellipse) {
+                    if (block.type == Type.ellipse) {
                         var r = (block.size.w / 2) + "px/" + (block.size.h / 2) + "px";
                         $(block.elem).css({'-moz-border-radius': r});
                         $(block.elem).css({'-webkit-border-radius': r});
@@ -1010,20 +1020,20 @@ var dia = (function() {
         function caprionPos_(cfg, line) {
             var p;
             var dx, dy;
-            if (line.capPos == capPos.start) {
+            if (line.capPos == CapPos.start) {
                 p = line.points[0];
 
                 dx = line.points[1].x - line.points[0].x;
                 dy = line.points[1].y - line.points[0].y;
 
-            } else if (line.capPos == capPos.end) {
+            } else if (line.capPos == CapPos.end) {
                 var n = line.points.length - 1;
 
                 p = line.points[n];
 
                 dx = line.points[n - 1].x - line.points[n].x;
                 dy = line.points[n - 1].y - line.points[n].y;
-            } else if (line.capPos == capPos.center) {
+            } else if (line.capPos == CapPos.center) {
                 var len = 0;
                 for (var i = 1; i < line.points.length; i++)
                     len += line.points[i].dist(line.points[i - 1]);
@@ -1056,19 +1066,19 @@ var dia = (function() {
             var y;
             var e = cfg.capOffset;
             var text = getTextSize_(line.elem);
-            if (line.capDir == capDir.ver) {
+            if (line.capDir == CapDir.ver) {
                 text = new size(text.h, text.w);
             }
 
-            if (line.capPos != capPos.center) {
+            if (line.capPos != CapPos.center) {
                 if (dx != 0) {
                     if (dx > 0) 
                         x = p.x + e;
                     if (dx < 0) 
                         x = p.x - e - text.w;
-                    if (line.capDir == capDir.hor)
+                    if (line.capDir == CapDir.hor)
                         y = p.y - e - text.h;
-                    if (line.capDir == capDir.ver)
+                    if (line.capDir == CapDir.ver)
                         y = p.y - text.h / 2;
                 }
                 if (dy != 0) {
@@ -1076,13 +1086,13 @@ var dia = (function() {
                         y = p.y + e;
                     if (dy < 0)
                         y = p.y - e - text.h;
-                    if (line.capDir == capDir.hor)
+                    if (line.capDir == CapDir.hor)
                         x = p.x - text.w / 2;
-                    if (line.capDir == capDir.ver) 
+                    if (line.capDir == CapDir.ver) 
                         x = p.x - e - text.w;
                 }
             } else {
-                if (line.capDir == capDir.hor) {
+                if (line.capDir == CapDir.hor) {
                     x = p.x - text.w / 2;
                     if (dx != 0) 
                         y = p.y - e - text.h;
@@ -1097,7 +1107,7 @@ var dia = (function() {
                 }
             }
 
-            if (line.capDir == capDir.ver) {
+            if (line.capDir == CapDir.ver) {
                 x = x - text.w - e;
                 y = y + text.w + e;
             }
@@ -1118,7 +1128,7 @@ var dia = (function() {
                 if (!('capCoords' in l))
                     continue;
 
-                if (l.capDir == capDir.ver) {
+                if (l.capDir == CapDir.ver) {
                     $(l.elem).css({'-webkit-transform': 'rotate(-90deg)'});
                     $(l.elem).css({'-moz-transform': 'rotate(-90deg)'});
                     $(l.elem).css({'-ms-transform': 'rotate(-90deg)'});
