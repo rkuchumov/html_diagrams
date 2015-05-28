@@ -135,12 +135,17 @@ var dia = (function() {
          * @property {Number} id diagram discription id in DOM
          * @propery {size} imgSize diagram size. Can be calculated after
          * blocks' positions are calulated 
-         * @throws {String} Error message on incorrect attributes values
+         * @property {Number} [lineEndLenght=10] Lenght of the figure at the end of the line
+         * @property {Number} [lineEndAngle=30] Angle of triangle, angle brackets or rhombus
+         * ending figure
+         * * @throws {String} Error message on incorrect attributes values
          */
         function Config(elem) {
             this.elem = elem;
             this.gridSize = 10;
             this.capOffset = 2;
+            this.lineEndLenght = 10;
+            this.lineEndAngle = 30;
 
             var attribs = getAttribs_(elem);
 
@@ -417,7 +422,7 @@ var dia = (function() {
          * @property {CapPos} [capPos=CapPos.center] caption position
          * @property {CapDir} [capDir=CapDir.hor] caption direction
          * @property {Number} [lineWidth=1] line width
-         * @property {lineStyle} [lineStyle=LineStyle.solid] line style
+         * @property {LineStyle} [lineStyle=LineStyle.solid] line style
          * @property {String} [lineColor='black'] line color
          * @property {String} domId id of DOM element describing this line
          * @throws {String} an error message if unable to parse attribute's value
@@ -428,7 +433,7 @@ var dia = (function() {
             this.endStyle = LineEnd.none;
             this.capPos = CapPos.center;
             this.capDir = CapDir.hor;
-            this.lineWidth = 1;
+            this.lineWidth = 2;
             this.lineStyle = LineStyle.solid;
             this.lineColor = "black";
             this.domId = attribs['id'];
@@ -527,7 +532,7 @@ var dia = (function() {
                 if (a.length > 1) {
                     switch (a[1]) {
                     case 'solid': this.lineStyle = LineStyle.solid; break;
-                    case 'dotter': this.lineStyle = LineStyle.dotted; break;
+                    case 'dotted': this.lineStyle = LineStyle.dotted; break;
                     case 'dashed': this.lineStyle = LineStyle.dashed; break;
                     default: throw 'Incorrect "dia-line-style" value';
                     }
@@ -912,14 +917,14 @@ var dia = (function() {
         function findPath(grid, start, end) {
             grid.setEmpty(end, true);
 
-            var parents = bfs(grid, start, end);
+            var parents = bfs_(grid, start, end);
             if (parents == null)
                 return null;
 
             return restorePath_(grid, parents, start, end);
         }
 
-        function bfs(grid, start, end) {
+        function bfs_(grid, start, end) {
             var open = [];
             open.push(start);
             var closed = [];
@@ -998,15 +1003,24 @@ var dia = (function() {
 
             $.each(lines, function(i, line) {
                     ctx.beginPath();
-                    // ctx.strokeStyle = '#f0f';
+                    ctx.strokeStyle = line.lineColor;
                     ctx.lineWidth = line.lineWidth;
-                    
+                    ctx.fillStyle = line.lineColor;
+
+                    if (line.lineStyle == LineStyle.dotted) {
+                        ctx.setLineDash([line.lineWidth,line.lineWidth]);
+                    } else if (line.lineStyle == LineStyle.dashed) {
+                        ctx.setLineDash([4 * line.lineWidth,  1.5 * line.lineWidth]);
+                    } else {
+                        ctx.setLineDash([0]);
+                    }
                     var prev = line.points[0];
                     ctx.moveTo(prev.x, prev.y);
                     var cur = line.points[1];
                     ctx.lineTo(cur.x, cur.y);
 
-                    for (var j = 2; j < line.points.length; j++) {
+                    var n = line.points.length;
+                    for (var j = 2; j < n; j++) {
                         prev = cur;
                         cur = line.points[j];
 
@@ -1014,7 +1028,187 @@ var dia = (function() {
                         ctx.lineTo(cur.x, cur.y);
                     }
                     ctx.stroke();
+                    ctx.closePath();
+
+                    ctx.setLineDash([0]);
+
+                    var start = line.points[0];
+                    var startDir = new point(start.x - line.points[1].x,
+                        start.y - line.points[1].y);
+
+                    var end = line.points[n - 1];
+                    var endDir = new point(end.x - line.points[n - 2].x,
+                        end.y - line.points[n - 2].y);
+
+                    if (line.startStyle == LineEnd.angle) {
+                        drawAngleEnd(cfg, ctx, start, startDir);
+                    } else if (line.startStyle == LineEnd.triangle) {
+                        drawTriangleEnd(cfg, ctx, start, startDir);
+                    } else if (line.startStyle == LineEnd.circle) {
+                        drawCircleEnd(cfg, ctx, start, startDir);
+                    } else if (line.startStyle == LineEnd.rhombus) {
+                        drawRhombusEnd(cfg, ctx, start, startDir);
+                    }
+
+                    if (line.endStyle == LineEnd.angle) {
+                        drawAngleEnd(cfg, ctx, end, endDir);
+                    } else if (line.endStyle == LineEnd.triangle) {
+                        drawTriangleEnd(cfg, ctx, end, endDir);
+                    } else if (line.endStyle == LineEnd.circle) {
+                        drawCircleEnd(cfg, ctx, end, endDir);
+                    } else if (line.endStyle == LineEnd.rhombus) {
+                        drawRhombusEnd(cfg, ctx, end, endDir);
+                    }
                 });
+        }
+
+        function drawAngleEnd(cfg, ctx, point, dir) {
+            var d = cfg.lineEndLenght;
+            var phi = Math.tan(30 * Math.PI / 180);
+
+            if (dir.y == 0) {
+                var x;
+                if (dir.x < 0)
+                    x = point.x + d;
+                if (dir.x > 0)
+                    x = point.x - d;
+
+                ctx.beginPath();
+                ctx.moveTo(point.x, point.y);
+                ctx.lineTo(x, point.y - d * phi);
+                ctx.moveTo(point.x, point.y);
+                ctx.lineTo(x, point.y + d * phi);
+                ctx.stroke();
+            }
+
+            if (dir.x == 0) {
+                var y;
+                if (dir.y < 0)
+                    y = point.y + d;
+                if (dir.y > 0)
+                    y = point.y - d;
+
+                ctx.beginPath();
+                ctx.moveTo(point.x, point.y);
+                ctx.lineTo(point.x - d * phi, y);
+                ctx.moveTo(point.x, point.y);
+                ctx.lineTo(point.x + d * phi, y);
+                ctx.stroke();
+            }
+        }
+
+        function drawTriangleEnd(cfg, ctx, point, dir) {
+            var d = cfg.lineEndLenght;
+            var phi = Math.tan(cfg.lineEndAngle * Math.PI / 180);
+
+            if (dir.y == 0) {
+                var x;
+                if (dir.x < 0)
+                    x = point.x + d;
+                if (dir.x > 0)
+                    x = point.x - d;
+
+                ctx.beginPath();
+                ctx.moveTo(point.x, point.y);
+                ctx.lineTo(x, point.y - d * phi);
+                ctx.lineTo(x, point.y + d * phi);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            if (dir.x == 0) {
+                var y;
+                if (dir.y < 0)
+                    y = point.y + d;
+                if (dir.y > 0)
+                    y = point.y - d;
+
+                ctx.beginPath();
+                ctx.moveTo(point.x, point.y);
+                ctx.lineTo(point.x - d * phi, y);
+                ctx.lineTo(point.x + d * phi, y);
+                ctx.closePath();
+                ctx.fill();
+            }
+        }
+
+        function drawCircleEnd(cfg, ctx, point, dir) {
+            var d = cfg.lineEndLenght;
+
+            if (dir.y == 0) {
+                var x;
+                if (dir.x < 0)
+                    x = point.x + d / 2;
+                if (dir.x > 0)
+                    x = point.x - d / 2;
+
+                ctx.beginPath();
+                ctx.arc(x, point.y, d / 2, 0, 2 * Math.PI);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            if (dir.x == 0) {
+                var y;
+                if (dir.y < 0)
+                    y = point.y + d / 2;
+                if (dir.y > 0)
+                    y = point.y - d / 2;
+
+                ctx.beginPath();
+                ctx.arc(point.x, y, d / 2, 0, 2 * Math.PI);
+                ctx.closePath();
+                ctx.fill();
+            }
+        }
+
+        function drawRhombusEnd(cfg, ctx, point, dir) {
+            var d = cfg.lineEndLenght;
+            var phi = Math.tan(cfg.lineEndAngle * Math.PI / 180);
+
+            if (dir.y == 0) {
+                var x;
+                if (dir.x < 0)
+                    x = point.x + d;
+                if (dir.x > 0)
+                    x = point.x - d;
+
+                ctx.beginPath();
+                ctx.moveTo(point.x, point.y);
+                ctx.lineTo(x, point.y - d * phi);
+
+                if (dir.x < 0)
+                    ctx.lineTo(point.x + 2 * d, point.y);
+                if (dir.x > 0)
+                    ctx.lineTo(point.x - 2 * d, point.y);
+
+                ctx.lineTo(x, point.y + d * phi);
+
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            if (dir.x == 0) {
+                var y;
+                if (dir.y < 0)
+                    y = point.y + d;
+                if (dir.y > 0)
+                    y = point.y - d;
+
+                ctx.beginPath();
+                ctx.moveTo(point.x, point.y);
+                ctx.lineTo(point.x - d * phi, y);
+
+                if (dir.y < 0)
+                    ctx.lineTo(point.x, point.y + 2 * d);
+                if (dir.y > 0)
+                    ctx.lineTo(point.x, point.y - 2 * d);
+
+                ctx.lineTo(point.x + d * phi, y);
+
+                ctx.closePath();
+                ctx.fill();
+            }
         }
 
         function caprionPos_(cfg, line) {
