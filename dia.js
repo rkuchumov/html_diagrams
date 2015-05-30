@@ -1,6 +1,8 @@
 var dia = (function() { 
         var pub = {};
 
+        var EPS = 1e-9;
+
         /** Enum for diagram objects types
          * @readonly
          * @enum {Number}
@@ -61,12 +63,12 @@ var dia = (function() {
 
         /** Calulates elemnt's content width and height
          * @param {Element} element in DOM
-         * @return {size} element's content size
+         * @return {Size} element's content size
          */
         function getTextSize_(elem) {
             var w = (elem.clientWidth + 1);
             var h = (elem.clientHeight + 1);
-            return new size(w, h);
+            return new Size(w, h);
         }
 
         /** Fetches attributes names and values of specified element and 
@@ -121,7 +123,7 @@ var dia = (function() {
          * @param {Number} w width
          * @param {Number} h height
          */
-        function size(w, h) {
+        function Size(w, h) {
             this.w = w;
             this.h = h;
         }
@@ -133,7 +135,7 @@ var dia = (function() {
          * @property {Number} capOffset caption offset from block and
          * corresponding line
          * @property {Number} id diagram discription id in DOM
-         * @propery {size} imgSize diagram size. Can be calculated after
+         * @propery {Size} imgSize diagram size. Can be calculated after
          * blocks' positions are calulated 
          * @property {Number} [lineEndLenght=10] Lenght of the figure at the end of the line
          * @property {Number} [lineEndAngle=30] Angle of triangle, angle brackets or rhombus
@@ -223,7 +225,7 @@ var dia = (function() {
                         var t = getType_(attribs);
 
                         if (t != Type.line) {
-                            blocks.push(new Block(attribs, e));
+                            blocks.push(new Block(cfg, attribs, e));
                         } else {
                             lines.push(new Line(attribs, e));
                         }
@@ -247,7 +249,7 @@ var dia = (function() {
          * @return {Type} type of an object
          * @throws {String} error message when unable to detemine type
          * @property {Boolean} hasPivot true, if block without relative
-         * position found
+         * position is found
          */
         function getType_(attribs) {
             if (('dia-line-start' in attribs) && ('dia-line-end' in attribs))
@@ -292,16 +294,16 @@ var dia = (function() {
          * @property {Type} [type=Type.rect] block type (rectangle, ellispse)
          * @property {String} domId id of DOM element describing this block
          * @property {point} relPos position of this block relative to relId block
-         * @property {size} size calculated block's size
+         * @property {Size} size calculated block's size
          * @property {coords} block's absolute position
          * @proprty {Number} relId id of a block used for relative postioning 
          * and aligment 
          * @proprty {Number} prop proportions (width / height)
          * @throws {String} an error message if unable to parse attribute's value
          */
-        function Block(attribs, e) {
+        function Block(cfg, attribs, e) {
             this.elem = e;
-            this.relDist = 20;
+            this.relDist = 2 * cfg.gridSize;
             this.alignCur = 0;
             this.alignRel = 0;
 
@@ -374,7 +376,7 @@ var dia = (function() {
                 var h = parseInt(a[1]);
 
                 if (a[0].substr(-2) == 'px' && a[1].substr(-2) == 'px') {
-                    this.minSize = new size(w, h);
+                    this.minSize = new Size(w, h);
                 } else if (isNum_(a[0]) && isNum_(a[1]) && w > 0 && h > 0) {
                     this.prop = w / h;
                 } else {
@@ -595,9 +597,6 @@ var dia = (function() {
         /** Calculates rectangle block size. The size is calculated 
          * according to block's proportions or min. size and is greater 
          * than the size of block's text
-         *
-         * @param {Block} block block
-         * @return {size} size  
          */
         function rectSize_(block) {
             var text = getTextSize_(block.elem);
@@ -616,41 +615,39 @@ var dia = (function() {
             }
 
             var tp = text.w / text.h;
-            if (tp > 1 && p < 1 || p < tp)
-                return new size(text.w, text.w / p);
-            if (tp < 1 && p > 1 || p > tp)
-                return new size(text.h * p, text.h);
+            if (tp > 1 && p < 1 || p <= tp)
+                return new Size(text.w, text.w / p);
+            if (tp < 1 && p > 1 || p >= tp)
+                return new Size(text.h * p, text.h);
         }
 
         /** Calculates ellipse block size. The size is calculated 
          * according to block's proportions or min. size and is greater 
          * than the size of block's text
-         *
-         * @param {Block} block block
-         * @return {size} size  
          */
         function ellipseSize_(block) {
             var text = getTextSize_(block.elem);
 
             if (block.prop == undefined && block.minSize == undefined)
-                return new size(Math.sqrt(2) * text.w, Math.sqrt(2) * text.h);
+                return new Size(Math.sqrt(2) * text.w, Math.sqrt(2) * text.h);
 
-            if (block.minSize != null) {
+            if (block.minSize != undefined) {
                 if (Math.sqrt(2) * text.w < block.minSize.w
                     && Math.sqrt(2) * text.h < block.minSize.h) 
                 {
                     return block.minSize;
                 }
 
-                return new size(Math.sqrt(2) * text.w, Math.sqrt(2) * text.h);
+                return new Size(Math.sqrt(2) * text.w, Math.sqrt(2) * text.h);
             }
 
+            var p = block.prop;
             var tp = text.w / text.h;
             var s;
-            if (tp > 1 && p < 1 || p < tp)
-                s = new size(text.w, text.w / p);
-            if (tp < 1 && p > 1 || p > tp)
-                s = new size(text.h * p, text.h);
+            if (tp > 1 && p < 1 || p <= tp)
+                s = new Size(text.w, text.w / p);
+            if (tp < 1 && p > 1 || p >= tp)
+                s = new Size(text.h * p, text.h);
 
             s.w *= Math.sqrt(2);
             s.h *= Math.sqrt(2);
@@ -755,7 +752,7 @@ var dia = (function() {
                 w += cfg.gridSize - w % cfg.gridSize;
             if (h % cfg.gridSize != 0)
                 h += cfg.gridSize - h % cfg.gridSize;
-            cfg.imgSize = new size(w, h);
+            cfg.imgSize = new Size(w, h);
 
             $.each(blocks, function(i, block) {
                     block.coords.x += -left;
@@ -770,15 +767,13 @@ var dia = (function() {
         function checkOverlaps_(cfg, blocks) {
             for (var i = 0; i < blocks.length; i++) { 
                 for (var j = i + 1; j < blocks.length; j++) { 
-                    var x1 = blocks[i].coords.x;
-                    var y1 = blocks[i].coords.y;
-                    var x2 = blocks[j].coords.x;
-                    var y2 = blocks[j].coords.y;
+                    var dx = Math.abs(blocks[i].coords.x - blocks[j].coords.x);
+                    var dy = Math.abs(blocks[i].coords.y - blocks[j].coords.y);
 
                     var w = 2 * cfg.gridSize + (blocks[i].size.w + blocks[j].size.w) / 2;
                     var h = 2 * cfg.gridSize + (blocks[i].size.h + blocks[j].size.h) / 2;
 
-                    if ((Math.abs(x1 - x2) < w) && (Math.abs(y1 - y2) < h))
+                    if (dx - w < -EPS && dy - h < -EPS)
                         throw "#" + blocks[i].domId + " overlaps #" + blocks[j].domId;
                 }
             }
@@ -824,7 +819,7 @@ var dia = (function() {
         }
 
         function linesPos_(cfg, blocks, lines) {
-            var g = new grid(cfg, blocks);
+            var g = new Grid(cfg, blocks);
             fillGrid_(g, blocks);
             
             $.each(lines, function(i, line) {
@@ -843,7 +838,7 @@ var dia = (function() {
                 });
         }
 
-        function grid(cfg) {
+        function Grid(cfg) {
             this.h = cfg.gridSize;
             this.n = cfg.imgSize.w / this.h + 1;
             this.m = cfg.imgSize.h / this.h + 1;
@@ -1261,7 +1256,7 @@ var dia = (function() {
             var e = cfg.capOffset;
             var text = getTextSize_(line.elem);
             if (line.capDir == CapDir.ver) {
-                text = new size(text.h, text.w);
+                text = new Size(text.h, text.w);
             }
 
             if (line.capPos != CapPos.center) {
@@ -1311,8 +1306,9 @@ var dia = (function() {
 
         function captionsPos_(cfg, lines) {
             $.each(lines, function(i, line) {
-                    if (!$(line.elem).is(':empty'))
+                    if (!$(line.elem).is(':empty')) {
                         caprionPos_(cfg, line);
+                    }
                 });
         }
 
