@@ -411,6 +411,8 @@ var dia = (function() {
             }
 
             if ('dia-coords' in attribs) {
+                throw 'Absolute positioning is not impemented yet';
+
                 var a = attribs['dia-coords'].split(':');
 
                 if (a.length != 2)
@@ -929,8 +931,15 @@ var dia = (function() {
             fillGrid_(g, blocks);
             
             $.each(lines, function(i, line) {
-                    // XXX 
+                    // XXX: ends postions 
                     var s = findBlock_(blocks, line.startBlockId);
+
+                    if (s.type == Type.ellipse && 
+                        (Math.abs(line.startBlockPos.x) + Math.abs(line.startBlockPos.y) == 2))
+                    {
+                        throw 'NW, NE, SW, SE line positions for ellipses is not implimented';
+                    }
+
                     var stX = s.coords.x + 0.5 * s.size.w * line.startBlockPos.x;
                     var stY = s.coords.y + 0.5 * s.size.h * line.startBlockPos.y;
                     var start = new Point(
@@ -938,6 +947,13 @@ var dia = (function() {
                     );
 
                     var e = findBlock_(blocks, line.endBlockId);
+
+                    if (e.type == Type.ellipse && 
+                        (Math.abs(line.endBlockPos.x) + Math.abs(line.endBlockPos.y) == 2))
+                    {
+                        throw 'NW, NE, SW, SE line positions for ellipses is not implimented';
+                    }
+
                     var enX = e.coords.x + 0.5 * e.size.w * line.endBlockPos.x;
                     var enY = e.coords.y + 0.5 * e.size.h * line.endBlockPos.y;
                     var end = new Point(
