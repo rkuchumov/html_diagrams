@@ -1,5 +1,6 @@
 var dia = (function() { 
         var pub = {};
+        // console.assert = function() {};
 
         var EPS = 1e-9;
 
@@ -92,7 +93,7 @@ var dia = (function() {
          * @param {Number} x first coordinate
          * @param {Number} y second coordinate
          */
-        function point(x, y) {
+        function Point(x, y) {
             this.x = x;
             this.y = y;
 
@@ -106,7 +107,7 @@ var dia = (function() {
             /** Manhattan distance between this and specified point
              * @name^2 dist
              * @function
-             * @param {point} another point
+             * @param {Point} another point
              * @return {Number} distance betweent this and specified point
              */
             this.dist = function(x, y) {
@@ -129,7 +130,7 @@ var dia = (function() {
         }
 
         /** Creates an instance of diagram config object. 
-         * @param {Element} elem DOM object containing diagram discription
+         * @param {Object} elem DOM object containing diagram discription
          * @property {Number} gridSize distance between grid's node. which is
          * used for calculating line's positions
          * @property {Number} capOffset caption offset from block and
@@ -143,6 +144,9 @@ var dia = (function() {
          * * @throws {String} Error message on incorrect attributes values
          */
         function Config(elem) {
+            console.assert(elem instanceof Element, 
+                'Empty diagam DOM object');
+
             this.elem = elem;
             this.gridSize = 10;
             this.capOffset = 2;
@@ -176,6 +180,11 @@ var dia = (function() {
          * @param {String} id DOM's id of an object contating diagam description
          */
         pub.draw = function(id) {
+            console.assert(typeof (jQuery) != 'undefined', 
+                'jQuery is not loaded');
+            console.assert(typeof (id) == 'string', 
+                'Incorrect diagram id: ' + id);
+
             try {
                 var cfg = new Config($('#' + id)[0]);
 
@@ -199,6 +208,8 @@ var dia = (function() {
         }
 
         function setDivDefaultCSS_(elem) {
+            console.assert(elem instanceof Element, 'Empty diagam DOM object');
+
             $(elem).css({'position': 'absolute'});
             $(elem).css({'height': 'auto'});
             $(elem).css({'width': 'auto'});
@@ -214,6 +225,9 @@ var dia = (function() {
          * @return {{blocks: Array.<Block>, lines: Array.<Line>}} Block and lines arrays
          */
         function parseDescr_(cfg) {
+            console.assert(cfg instanceof Config, 
+                'Incorrect function arguments');
+
             var blocks = [];
             var lines = [];
             $(cfg.elem).children().each(function(id, e) {
@@ -252,6 +266,9 @@ var dia = (function() {
          * position is found
          */
         function getType_(attribs) {
+            console.assert(typeof (attribs) == 'object', 
+                'Incorrect function arguments');
+
             if (('dia-line-start' in attribs) && ('dia-line-end' in attribs))
                 return Type.line;
 
@@ -293,7 +310,7 @@ var dia = (function() {
          * for 3, 2, 1 axes
          * @property {Type} [type=Type.rect] block type (rectangle, ellispse)
          * @property {String} domId id of DOM element describing this block
-         * @property {point} relPos position of this block relative to relId block
+         * @property {Point} relPos position of this block relative to relId block
          * @property {Size} size calculated block's size
          * @property {coords} block's absolute position
          * @proprty {Number} relId id of a block used for relative postioning 
@@ -302,6 +319,13 @@ var dia = (function() {
          * @throws {String} an error message if unable to parse attribute's value
          */
         function Block(cfg, attribs, e) {
+            console.assert(typeof (attribs) == 'object', 
+                'Incorrect function arguments');
+            console.assert(e instanceof Element, 
+                'Incorrect function arguments');
+            console.assert(cfg instanceof Config, 
+                'Incorrect function arguments');
+
             this.elem = e;
             this.relDist = 2 * cfg.gridSize;
             this.alignCur = 0;
@@ -323,14 +347,14 @@ var dia = (function() {
 
                 var pos;
                 switch (a[1]) {
-                case 'n':  pos = new point( 0, -1); break;
-                case 's':  pos = new point( 0,  1); break;
-                case 'w':  pos = new point(-1,  0); break;
-                case 'e':  pos = new point( 1,  0); break;
-                case 'nw': pos = new point(-1, -1); break;
-                case 'ne': pos = new point( 1, -1); break;
-                case 'sw': pos = new point(-1,  1); break;
-                case 'se': pos = new point( 1,  1); break;
+                case 'n':  pos = new Point( 0, -1); break;
+                case 's':  pos = new Point( 0,  1); break;
+                case 'w':  pos = new Point(-1,  0); break;
+                case 'e':  pos = new Point( 1,  0); break;
+                case 'nw': pos = new Point(-1, -1); break;
+                case 'ne': pos = new Point( 1, -1); break;
+                case 'sw': pos = new Point(-1,  1); break;
+                case 'se': pos = new Point( 1,  1); break;
                 default: throw 'Incorrect "dia-pos" value (postion)';
                 }
                 this.relPos = pos;
@@ -377,7 +401,9 @@ var dia = (function() {
 
                 if (a[0].substr(-2) == 'px' && a[1].substr(-2) == 'px') {
                     this.minSize = new Size(w, h);
-                } else if (isNum_(a[0]) && isNum_(a[1]) && w > 0 && h > 0) {
+                } else if (isNum_(a[0]) && isNum_(a[1])
+                    && w > 0 && h > 0)
+                {
                     this.prop = w / h;
                 } else {
                     throw 'Incorrect "dia-size" value';
@@ -393,8 +419,10 @@ var dia = (function() {
                 var x = parseInt(a[0]);
                 var y = parseInt(a[1]);
 
-                if (a[0].substr(-2) == 'px' && a[1].substr(-2) == 'px' && x > 0 && y > 0) {
-                    this.coords = new point(x, y);
+                if (a[0].substr(-2) == 'px' && a[1].substr(-2) == 'px'
+                    && x > 0 && y > 0) 
+                {
+                    this.coords = new Point(x, y);
                 } else {
                     throw 'Incorrect "dia-coords" value';
                 }
@@ -430,6 +458,11 @@ var dia = (function() {
          * @throws {String} an error message if unable to parse attribute's value
          */
         function Line(attribs, e) {
+            console.assert(typeof (attribs) == 'object', 
+                'Incorrect function arguments');
+            console.assert(e instanceof Element,
+                'Incorrect function arguments');
+
             this.elem = e;
             this.startStyle = LineEnd.none;
             this.endStyle = LineEnd.none;
@@ -444,11 +477,13 @@ var dia = (function() {
              * @param {String} attribute value
              * @return {Object} ret parsed value
              * @return {String} ret.id id of an end block
-             * @return {point} ret.pos line's end position 
+             * @return {Point} ret.pos line's end position 
              * @return {LineEnd} ret.sh line's end style
              * @throws {String} an error message if unable to parse attribute's value
              */
             function lineEnd_(str) {
+                console.assert(typeof (str) == 'string', 'Incorrect function arguments');
+
                 var ret = {};
                 var a = str.split('+');
 
@@ -459,14 +494,14 @@ var dia = (function() {
 
                 var pos;
                 switch (a[1]) {
-                case 'n':  pos = new point( 0, -1); break;
-                case 's':  pos = new point( 0,  1); break;
-                case 'w':  pos = new point(-1,  0); break;
-                case 'e':  pos = new point( 1,  0); break;
-                case 'nw': pos = new point(-1, -1); break;
-                case 'ne': pos = new point( 1, -1); break;
-                case 'sw': pos = new point(-1,  1); break;
-                case 'se': pos = new point( 1,  1); break;
+                case 'n':  pos = new Point( 0, -1); break;
+                case 's':  pos = new Point( 0,  1); break;
+                case 'w':  pos = new Point(-1,  0); break;
+                case 'e':  pos = new Point( 1,  0); break;
+                case 'nw': pos = new Point(-1, -1); break;
+                case 'ne': pos = new Point( 1, -1); break;
+                case 'sw': pos = new Point(-1,  1); break;
+                case 'se': pos = new Point( 1,  1); break;
                 default: throw 'position';
                 }
                 ret['pos'] = pos;
@@ -493,7 +528,7 @@ var dia = (function() {
                 if (s.sh != null)
                     this.startStyle = s.sh;
             } catch (s) {
-                throw 'Incorrect "dia-line-start" value' + s;
+                throw 'Incorrect "dia-line-start" value (' + s + ')';
             }
 
             try {
@@ -503,7 +538,7 @@ var dia = (function() {
                 if (e.sh != null)
                     this.endStyle = e.sh;
             } catch (s) {
-                throw 'Incorrect "dia-line-end" value' + s;
+                throw 'Incorrect "dia-line-end" value (' + s + ')';
             }
 
 
@@ -557,7 +592,15 @@ var dia = (function() {
          * @throws {String} error message when id doesn't belong to current diagram
          */
         function checkIdScope_(blocks, lines) {
+            console.assert(blocks instanceof Array, 
+                'Incorrect function arguments');
+            console.assert(lines instanceof Array, 
+                'Incorrect function arguments');
+
             for (var i = 0; i < blocks.length; i++) {
+                console.assert(blocks[i] instanceof Block, 
+                    'Incorrect function arguments');
+
                 blocks[i].id = i;
 
                 if (blocks[i].domId == undefined)
@@ -599,7 +642,13 @@ var dia = (function() {
          * than the size of block's text
          */
         function rectSize_(block) {
+            console.assert(block instanceof Block, 
+                'Incorrect function arguments');
+
             var text = getTextSize_(block.elem);
+            console.assert(text instanceof Size);
+            console.assert(text.w > 0);
+            console.assert(text.h > 0);
 
             if (block.prop == undefined && block.minSize == undefined) {
                 return text;
@@ -613,11 +662,12 @@ var dia = (function() {
             } else if (block.prop != undefined) {
                 p = block.prop;
             }
+            console.assert(p > 0, 'Propotions <= 0');
 
             var tp = text.w / text.h;
             if (tp > 1 && p < 1 || p <= tp)
                 return new Size(text.w, text.w / p);
-            if (tp < 1 && p > 1 || p >= tp)
+            if (tp < 1 && p > 1 || p > tp)
                 return new Size(text.h * p, text.h);
         }
 
@@ -626,7 +676,13 @@ var dia = (function() {
          * than the size of block's text
          */
         function ellipseSize_(block) {
+            console.assert(block instanceof Block, 
+                'Incorrect function arguments');
+
             var text = getTextSize_(block.elem);
+            console.assert(text instanceof Size);
+            console.assert(text.w > 0);
+            console.assert(text.h > 0);
 
             if (block.prop == undefined && block.minSize == undefined)
                 return new Size(Math.sqrt(2) * text.w, Math.sqrt(2) * text.h);
@@ -642,11 +698,13 @@ var dia = (function() {
             }
 
             var p = block.prop;
+            console.assert(p > 0, 'Propotions <= 0');
+
             var tp = text.w / text.h;
             var s;
             if (tp > 1 && p < 1 || p <= tp)
                 s = new Size(text.w, text.w / p);
-            if (tp < 1 && p > 1 || p >= tp)
+            if (tp < 1 && p > 1 || p > tp)
                 s = new Size(text.h * p, text.h);
 
             s.w *= Math.sqrt(2);
@@ -659,6 +717,11 @@ var dia = (function() {
          * each other
          */
         function blocksPos_(cfg, blocks) {
+            console.assert(blocks instanceof Array, 
+                'Incorrect function arguments');
+            console.assert(cfg instanceof Config, 
+                'Incorrect function arguments');
+
             blocksRelPos_(cfg, blocks);
             blocksAbsPos_(cfg, blocks);
 
@@ -673,7 +736,17 @@ var dia = (function() {
          * or to the block without 'dia-pos' attribute.
          */
         function blocksRelPos_(cfg, blocks) {
+            console.assert(blocks instanceof Array, 
+                'Incorrect function arguments');
+            console.assert(cfg instanceof Config, 
+                'Incorrect function arguments');
+
             for (var i = 0; i < blocks.length; i++) {
+                console.assert(blocks[i] instanceof Block, 
+                    'Incorrect function arguments');
+                console.assert(blocks[i].size instanceof Size, 
+                    'Block size is not set');
+
                 if (blocks[i].relId !== undefined)
                     continue;
 
@@ -683,7 +756,7 @@ var dia = (function() {
                 break;
             } 
 
-            blocks[0].coords = new point(0, 0);
+            blocks[0].coords = new Point(0, 0);
 
             for (var i = 0; i < blocks.length; i++) { 
                 for (var j = 0; j < blocks.length; j++) { 
@@ -712,7 +785,7 @@ var dia = (function() {
                             + blocks[j].alignRel * blocks[i].size.h)
                         * (1 - Math.abs(blocks[j].relPos.y));
 
-                    blocks[j].coords = new point(x, y);
+                    blocks[j].coords = new Point(x, y);
                 }
             }
         }
@@ -721,6 +794,11 @@ var dia = (function() {
          * Sets image size.
          */
         function blocksAbsPos_(cfg, blocks) {
+            console.assert(blocks instanceof Array, 
+                'Incorrect function arguments');
+            console.assert(cfg instanceof Config, 
+                'Incorrect function arguments');
+
             // top left and bottom right image coordinates relative to the 
             // first block
             var left = Number.MAX_VALUE;
@@ -765,13 +843,20 @@ var dia = (function() {
          * @throws {String} Error message if there are blocks overlaping
          */
         function checkOverlaps_(cfg, blocks) {
+            console.assert(blocks instanceof Array, 
+                'Incorrect function arguments');
+            console.assert(cfg instanceof Config, 
+                'Incorrect function arguments');
+
             for (var i = 0; i < blocks.length; i++) { 
                 for (var j = i + 1; j < blocks.length; j++) { 
                     var dx = Math.abs(blocks[i].coords.x - blocks[j].coords.x);
                     var dy = Math.abs(blocks[i].coords.y - blocks[j].coords.y);
 
-                    var w = 2 * cfg.gridSize + (blocks[i].size.w + blocks[j].size.w) / 2;
-                    var h = 2 * cfg.gridSize + (blocks[i].size.h + blocks[j].size.h) / 2;
+                    var w = 2 * cfg.gridSize +
+                        (blocks[i].size.w + blocks[j].size.w) / 2;
+                    var h = 2 * cfg.gridSize +
+                        (blocks[i].size.h + blocks[j].size.h) / 2;
 
                     if (dx - w < -EPS && dy - h < -EPS)
                         throw "#" + blocks[i].domId + " overlaps #" + blocks[j].domId;
@@ -782,6 +867,13 @@ var dia = (function() {
         /* Draws blocks by setting CSS values to resp. DOM elements
          */
         function drawBlocks_(cfg, blocks) {
+            console.assert(blocks instanceof Array, 
+                'Incorrect function arguments');
+            console.assert(cfg instanceof Config, 
+                'Incorrect function arguments');
+            console.assert(typeof (cfg.imgSize) != null, 
+                'Incorrect function arguments');
+
             $(cfg.elem).css({'width': cfg.imgSize.w});
             $(cfg.elem).css({'height': cfg.imgSize.h});
             $(cfg.elem).css({'position': 'relative'});
@@ -796,7 +888,8 @@ var dia = (function() {
                     $(block.elem).css({'height': block.size.h});
 
                     if (block.type == Type.ellipse) {
-                        var r = (block.size.w / 2) + "px/" + (block.size.h / 2) + "px";
+                        var r = (block.size.w / 2) + "px/" +
+                            (block.size.h / 2) + "px";
                         $(block.elem).css({'-moz-border-radius': r});
                         $(block.elem).css({'-webkit-border-radius': r});
                         $(block.elem).css({'border-radius': r});
@@ -811,6 +904,12 @@ var dia = (function() {
         }
 
         function findBlock_(blocks, id) {
+            console.assert(blocks instanceof Array, 
+                'Incorrect function arguments');
+            console.assert(typeof (id) == 'number', 
+                'Incorrect function arguments');
+            console.assert(id >= 0, 'Incorrect function arguments');
+
             for (var i = 0; i < blocks.length; i++) {
                 if (blocks[i].id == id)
                     return blocks[i];
@@ -819,6 +918,13 @@ var dia = (function() {
         }
 
         function linesPos_(cfg, blocks, lines) {
+            console.assert(blocks instanceof Array, 
+                'Incorrect function arguments');
+            console.assert(lines instanceof Array, 
+                'Incorrect function arguments');
+            console.assert(cfg instanceof Config, 
+                'Incorrect function arguments');
+
             var g = new Grid(cfg, blocks);
             fillGrid_(g, blocks);
             
@@ -827,18 +933,25 @@ var dia = (function() {
                     var s = findBlock_(blocks, line.startBlockId);
                     var stX = s.coords.x + 0.5 * s.size.w * line.startBlockPos.x;
                     var stY = s.coords.y + 0.5 * s.size.h * line.startBlockPos.y;
-                    var start = new point(Math.round(stX / g.h), Math.round(stY / g.h));
+                    var start = new Point(
+                        Math.round(stX / g.h), Math.round(stY / g.h)
+                    );
 
                     var e = findBlock_(blocks, line.endBlockId);
                     var enX = e.coords.x + 0.5 * e.size.w * line.endBlockPos.x;
                     var enY = e.coords.y + 0.5 * e.size.h * line.endBlockPos.y;
-                    var end = new point(Math.round(enX / g.h), Math.round(enY / g.h));
+                    var end = new Point(
+                        Math.round(enX / g.h), Math.round(enY / g.h)
+                    );
 
                     line.points = findPath(g, start, end);
                 });
         }
 
         function Grid(cfg) {
+            console.assert(cfg instanceof Config, 
+                'Incorrect function arguments');
+
             this.h = cfg.gridSize;
             this.n = cfg.imgSize.w / this.h + 1;
             this.m = cfg.imgSize.h / this.h + 1;
@@ -848,15 +961,20 @@ var dia = (function() {
                 g[j] = new Array(this.n);
 
             this.empty = function(x, y) {
+                console.assert(arguments.length == 1 || arguments.length == 2,
+                    'Incorrect function arguments');
+
                 if (arguments.length == 1) {
                     return g[x.y][x.x] == true;
                 } else if (arguments.length == 2) {
                     return g[y][x] == true;
                 }
-                return undefined;
             }
 
             this.setEmpty = function(x, y, val) {
+                console.assert(arguments.length == 2 || arguments.length == 3,
+                    'Incorrect function arguments');
+
                 if (arguments.length == 2) {
                     g[x.y][x.x] = y;
                 } else if (arguments.length == 3) {
@@ -866,22 +984,33 @@ var dia = (function() {
             }
 
             this.id = function(node) {
+                console.assert(node instanceof Point,
+                    'Incorrect function arguments');
+
                 return node.y * this.n + node.x;
             }
 
             this.node = function(id) {
                 var y = Math.floor(id / this.n);
                 var x = id % this.n;
-                return new point(x, y);
+                return new Point(x, y);
             }
         }
 
         function fillGrid_(grid, blocks) {
+            console.assert(grid instanceof Grid, 
+                'Incorrect function arguments');
+            console.assert(blocks instanceof Array, 
+                'Incorrect function arguments');
+
             for (var j = 0; j < grid.m; j++)
                 for (var i = 0; i < grid.n; i++)
                     grid.setEmpty(i, j, true);
 
             $.each(blocks, function(i, block) {
+                    console.assert(block instanceof Block, 
+                        'Incorrect function arguments');
+
                     var l = block.coords.x - 0.5 * block.size.w;
                     var r = block.coords.x + 0.5 * block.size.w;
                     var b = block.coords.y - 0.5 * block.size.h;
@@ -910,6 +1039,13 @@ var dia = (function() {
         }
 
         function findPath(grid, start, end) {
+            console.assert(grid instanceof Grid, 
+                'Incorrect function arguments');
+            console.assert(start instanceof Point, 
+                'Incorrect function arguments');
+            console.assert(end instanceof Point, 
+                'Incorrect function arguments');
+
             grid.setEmpty(end, true);
 
             var parents = bfs_(grid, start, end);
@@ -920,6 +1056,13 @@ var dia = (function() {
         }
 
         function bfs_(grid, start, end) {
+            console.assert(grid instanceof Grid, 
+                'Incorrect function arguments');
+            console.assert(start instanceof Point, 
+                'Incorrect function arguments');
+            console.assert(end instanceof Point, 
+                'Incorrect function arguments');
+
             var open = [];
             open.push(start);
             var closed = [];
@@ -934,7 +1077,7 @@ var dia = (function() {
                 var u = open.shift();
 
                 for (var d = 0; d < dx.length; d++) {
-                    var v = new point(u.x + dx[d], u.y + dy[d]);
+                    var v = new Point(u.x + dx[d], u.y + dy[d]);
                     if (!grid.empty(v))
                         continue;
                     if (grid.id(v) in closed)
@@ -956,11 +1099,20 @@ var dia = (function() {
         }
 
         function restorePath_(grid, path, start, end) {
+            console.assert(grid instanceof Grid, 
+                'Incorrect function arguments');
+            console.assert(path instanceof Array, 
+                'Incorrect function arguments');
+            console.assert(start instanceof Point, 
+                'Incorrect function arguments');
+            console.assert(end instanceof Point, 
+                'Incorrect function arguments');
+
             var prev = end;
             var cur = grid.node(path[grid.id(prev)]);
 
             var p = [];
-            p.push(new point(prev.x * grid.h, prev.y * grid.h));
+            p.push(new Point(prev.x * grid.h, prev.y * grid.h));
 
             var prevDir = (prev.x == cur.x) ? 1 : 0;
 
@@ -973,10 +1125,10 @@ var dia = (function() {
 
                 var curDir = (prev.x == cur.x) ? 1 : 0;
                 if (prevDir != curDir)
-                    p.push(new point(prev.x * grid.h, prev.y * grid.h));
+                    p.push(new Point(prev.x * grid.h, prev.y * grid.h));
                 prevDir = curDir;
             }
-            p.push(new point(cur.x * grid.h, cur.y * grid.h));
+            p.push(new Point(cur.x * grid.h, cur.y * grid.h));
 
             p.reverse();
 
@@ -984,6 +1136,11 @@ var dia = (function() {
         }
 
         function drawLines_(cfg, lines) {
+            console.assert(cfg instanceof Config,
+                'Incorrect function arguments');
+            console.assert(lines instanceof Array, 
+                'Incorrect function arguments');
+
             var id = cfg.id + 'Canvas';
             var can = '<canvas ' + 
                 'id="' + id + '" ' + 
@@ -997,6 +1154,9 @@ var dia = (function() {
             var ctx = document.getElementById(id).getContext("2d");
 
             $.each(lines, function(i, line) {
+                    console.assert(line instanceof Line, 
+                        'Incorrect function arguments');
+
                     ctx.beginPath();
                     ctx.strokeStyle = line.lineColor;
                     ctx.lineWidth = line.lineWidth;
@@ -1005,7 +1165,10 @@ var dia = (function() {
                     if (line.lineStyle == LineStyle.dotted) {
                         ctx.setLineDash([line.lineWidth,line.lineWidth]);
                     } else if (line.lineStyle == LineStyle.dashed) {
-                        ctx.setLineDash([4 * line.lineWidth,  1.5 * line.lineWidth]);
+                        ctx.setLineDash([
+                                4 * line.lineWidth,
+                                1.5 * line.lineWidth
+                            ]);
                     } else {
                         ctx.setLineDash([0]);
                     }
@@ -1015,6 +1178,8 @@ var dia = (function() {
                     ctx.lineTo(cur.x, cur.y);
 
                     var n = line.points.length;
+                    console.assert(n >= 2, 'Lines path is empty');
+
                     for (var j = 2; j < n; j++) {
                         prev = cur;
                         cur = line.points[j];
@@ -1028,11 +1193,11 @@ var dia = (function() {
                     ctx.setLineDash([0]);
 
                     var start = line.points[0];
-                    var startDir = new point(start.x - line.points[1].x,
+                    var startDir = new Point(start.x - line.points[1].x,
                         start.y - line.points[1].y);
 
                     var end = line.points[n - 1];
-                    var endDir = new point(end.x - line.points[n - 2].x,
+                    var endDir = new Point(end.x - line.points[n - 2].x,
                         end.y - line.points[n - 2].y);
 
                     if (line.startStyle == LineEnd.angle) {
@@ -1058,6 +1223,17 @@ var dia = (function() {
         }
 
         function drawAngleEnd(cfg, ctx, point, dir) {
+            console.assert(cfg instanceof Config, 
+                'Incorrect function arguments');
+            console.assert(ctx instanceof CanvasRenderingContext2D,
+                'Incorrect function arguments');
+            console.assert(point instanceof Point,
+                'Incorrect function arguments');
+            console.assert(dir instanceof Point, 
+                'Incorrect function arguments');
+            console.assert(cfg.lineEndAngle > 0 && cfg.lineEndAngle < 90,
+                'Line angle should be 0 < a < 90')
+
             var d = cfg.lineEndLenght;
             var phi = Math.tan(30 * Math.PI / 180);
 
@@ -1093,6 +1269,17 @@ var dia = (function() {
         }
 
         function drawTriangleEnd(cfg, ctx, point, dir) {
+            console.assert(cfg instanceof Config, 
+                'Incorrect function arguments');
+            console.assert(ctx instanceof CanvasRenderingContext2D,
+                'Incorrect function arguments');
+            console.assert(point instanceof Point,
+                'Incorrect function arguments');
+            console.assert(dir instanceof Point, 
+                'Incorrect function arguments');
+            console.assert(cfg.lineEndAngle > 0 && cfg.lineEndAngle < 90,
+                'Line angle should be 0 < a < 90')
+
             var d = cfg.lineEndLenght;
             var phi = Math.tan(cfg.lineEndAngle * Math.PI / 180);
 
@@ -1128,6 +1315,17 @@ var dia = (function() {
         }
 
         function drawCircleEnd(cfg, ctx, point, dir) {
+            console.assert(cfg instanceof Config, 
+                'Incorrect function arguments');
+            console.assert(ctx instanceof CanvasRenderingContext2D,
+                'Incorrect function arguments');
+            console.assert(point instanceof Point,
+                'Incorrect function arguments');
+            console.assert(dir instanceof Point, 
+                'Incorrect function arguments');
+            console.assert(cfg.lineEndAngle > 0 && cfg.lineEndAngle < 90,
+                'Line angle should be 0 < a < 90')
+
             var d = cfg.lineEndLenght;
 
             if (dir.y == 0) {
@@ -1158,6 +1356,17 @@ var dia = (function() {
         }
 
         function drawRhombusEnd(cfg, ctx, point, dir) {
+            console.assert(cfg instanceof Config, 
+                'Incorrect function arguments');
+            console.assert(ctx instanceof CanvasRenderingContext2D,
+                'Incorrect function arguments');
+            console.assert(point instanceof Point,
+                'Incorrect function arguments');
+            console.assert(dir instanceof Point, 
+                'Incorrect function arguments');
+            console.assert(cfg.lineEndAngle > 0 && cfg.lineEndAngle < 90,
+                'Line angle should be 0 < a < 90')
+
             var d = cfg.lineEndLenght;
             var phi = Math.tan(cfg.lineEndAngle * Math.PI / 180);
 
@@ -1206,7 +1415,12 @@ var dia = (function() {
             }
         }
 
-        function caprionPos_(cfg, line) {
+        function captionPos_(cfg, line) {
+            console.assert(cfg instanceof Config, 
+                'Incorrect function arguments');
+            console.assert(line instanceof Line,
+                'Incorrect function arguments');
+
             var p;
             var dx, dy;
             if (line.capPos == CapPos.start) {
@@ -1239,7 +1453,7 @@ var dia = (function() {
                 dx = line.points[s].x - line.points[s - 1].x;
                 dy = line.points[s].y - line.points[s - 1].y;
 
-                p = new point();
+                p = new Point();
                 $.extend(p, line.points[s - 1]);
                 if (dx < 0)
                     p.x -= len / 2 - l; 
@@ -1301,18 +1515,30 @@ var dia = (function() {
                 y = y + text.w + e;
             }
 
-            line.capCoords = new point(x, y);
+            line.capCoords = new Point(x, y);
         }
 
         function captionsPos_(cfg, lines) {
+            console.assert(cfg instanceof Config,
+                'Incorrect function arguments');
+            console.assert(lines instanceof Array, 
+                'Incorrect function arguments');
+
             $.each(lines, function(i, line) {
+                    console.assert(line instanceof Line, 
+                        'Incorrect function arguments');
                     if (!$(line.elem).is(':empty')) {
-                        caprionPos_(cfg, line);
+                        captionPos_(cfg, line);
                     }
                 });
         }
 
         function drawCaptions_(cfg, lines) {
+            console.assert(cfg instanceof Config, 
+                'Incorrect function arguments');
+            console.assert(lines instanceof Array, 
+                'Incorrect function arguments');
+
             for (var i = 0; i < lines.length; i++) {
                 var l = lines[i];
                 if (!('capCoords' in l))
@@ -1323,7 +1549,8 @@ var dia = (function() {
                     $(l.elem).css({'-moz-transform': 'rotate(-90deg)'});
                     $(l.elem).css({'-ms-transform': 'rotate(-90deg)'});
                     $(l.elem).css({'-o-transform': 'rotate(-90deg)'});
-                    $(l.elem).css({'filter': 'progid:DXImageTransform.Microsoft.BasicImage(rotation=3)'});
+                    $(l.elem).css({'filter': 
+                            'progid:DXImageTransform.Microsoft.BasicImage(rotation=3)'});
                 }
 
                 $(l.elem).css({'top': l.capCoords.y});
