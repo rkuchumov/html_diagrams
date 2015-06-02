@@ -81,7 +81,7 @@ var dia = (function() {
             var attr = {};
             $(elem.attributes).each(function() {
                     var name = this.nodeName.toLowerCase();
-                    attr[name] = this.nodeValue.toLowerCase();
+                    attr[name] = this.value.toLowerCase();
                 });
 
             return attr;
@@ -1167,7 +1167,12 @@ var dia = (function() {
 
             $(cfg.elem).append(can);
 
-            var ctx = document.getElementById(id).getContext("2d");
+            var canvas = document.getElementById(id);
+            if (!canvas.getContext) {
+                throw 'Your browser does not support the HTML5 canvas tag.';
+            }
+
+            var ctx = canvas.getContext('2d');
 
             $.each(lines, function(i, line) {
                     console.assert(line instanceof Line, 
@@ -1186,7 +1191,7 @@ var dia = (function() {
                                 1.5 * line.lineWidth
                             ]);
                     } else {
-                        ctx.setLineDash([0]);
+                        ctx.setLineDash([]);
                     }
                     var prev = line.points[0];
                     ctx.moveTo(prev.x, prev.y);
@@ -1206,7 +1211,7 @@ var dia = (function() {
                     ctx.stroke();
                     ctx.closePath();
 
-                    ctx.setLineDash([0]);
+                    ctx.setLineDash([]);
 
                     var start = line.points[0];
                     var startDir = new Point(start.x - line.points[1].x,
