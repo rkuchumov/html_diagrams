@@ -232,7 +232,7 @@ $(function() {
 и установить CSS для блоков:
 
 ```css
-.bl1, bl2, bl3 div {background: #aaa;}
+#bl1, #bl2, #bl3 {background: #aaa;}
 ```
 
 то будет получено следующее изображение диаграммы:
