@@ -35,10 +35,8 @@
 ## Установка
 1. В HTML5 документ, содержащий описание диаграммы необходимо подключить файлы библиотеки
 
-        ```
         <script type="text/javascript" src="jquery-2.1.1.min.js"></script>
         <script type="text/javascript" src="dia.js"></script>
-        ```
 
 2. Вызвать функцию `dia.draw(id_объекта_с_описанием)` из пользовательского JavaScript (например, из обработчика события загрузки документа).
 
@@ -185,44 +183,42 @@
 *См. файл `index.html`*
 
 ```html
-        <div id="usecase">
-            <!-- 
-                У одного блока может быть не указана позиция (dia-pos), тогда относительная 
-                позиция остальных блоков должна прямо или косвенно быть указан относительно этого блока
-            -->
-            <div id="bl1" dia-size="160px:160px">1</div>
-            <!-- 
-                dia-pos="bl1+n+150px" означает, что bl2 находится на серере (т.е. сверху) относительно 
-                блока bl1 на расстоянии 150px
-            -->
-            <div id="bl2" dia-pos="bl1+n+150px" dia-size="160px:40px">2</div>
-            <div id="bl3" dia-pos="bl1+e+150px" dia-size="40px:160px">3</div>
+<div id="usecase">
+    <!-- 
+        У одного блока может быть не указана позиция (dia-pos), тогда относительная 
+        позиция остальных блоков должна прямо или косвенно быть указан относительно этого блока
+    -->
+    <div id="bl1" class="block" dia-size="160px:160px">1</div>
 
-            <!--
-            Описываем соединительную линию между блоками bl1 и bl2. 
-            dia-line-start="bl1+n+rhombus" означает, что начало соед. линии находится на севере 
-            (т.е. по центру сверху) на блоке bl1 и конец имеет форму ромбика. Аналогично для 
-            dia-line-end. 
-            Вертикальное напрвление подписи (Text 1-2) задается атрибутом dia-direction="ver" 
-            -->
-            <div dia-line-start="bl1+n+rhombus" 
-                 dia-line-end="bl2+s+angle" 
-                 dia-direction="ver" 
-                 dia-line-style="2px dotted red">Text 1-2</div>
+    <!-- 
+        dia-pos="bl1+n+150px" означает, что bl2 находится на серере (т.е. сверху) относительно 
+        блока bl1 на расстоянии 150px
+    -->
+    <div id="bl2" dia-pos="bl1+n+150px" dia-size="160px:40px">2</div>
+    <div id="bl3" dia-pos="bl1+e+150px" dia-size="40px:160px">3</div>
+    
+    <!--
+    Описываем соединительную линию между блоками bl1 и bl2. 
+    dia-line-start="bl1+n+rhombus" означает, что начало соед. линии находится на севере 
+    (т.е. по центру сверху) на блоке bl1 и конец имеет форму ромбика. Аналогично для 
+    dia-line-end. 
+    Вертикальное напрвление подписи (Text 1-2) задается атрибутом dia-direction="ver" 
+    -->
+    <div dia-line-start="bl1+n+rhombus" 
+            dia-line-end="bl2+s+angle" 
+            dia-direction="ver" 
+            dia-line-style="2px dotted red">Text 1-2</div>
+            
+    <div dia-line-start="bl1+e+circle" 
+            dia-line-end="bl3+w+triangle" 
+            dia-text-pos="start">Text 1-3 </div>
+            
+    <div dia-line-start="bl3+n" 
+            dia-line-end="bl2+e+angle" 
+            dia-text-pos="center" 
+            dia-line-style="2px dashed blue"></div>
+</div>
 
-            <div dia-line-start="bl1+e+circle" 
-                 dia-line-end="bl3+w+triangle" 
-                 dia-text-pos="start">Text 1-3 </div>
-
-            <div dia-line-start="bl3+w" 
-                 dia-line-end="bl1+e" 
-                 dia-text-pos="start">Text 3-1</div>
-
-            <div dia-line-start="bl3+n+angle" 
-                 dia-line-end="bl2+e+angle" 
-                 dia-text-pos="center" 
-                 dia-line-style="2px dashed blue"></div>
-        </div>
 ```
 
 Если передать идентификатор этой диаграммы функции `dia.draw` в обработчке события загрузки документа, т.е.
