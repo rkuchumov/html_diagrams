@@ -14,19 +14,116 @@ $(function() {
 
     dia.draw("usecase1");
     dia.draw("usecase2");
+    dia.draw("usecase3");
 });
         </script>
         <style type="text/css" media="screen">
 .block, #blockAlign div {background: #aaa;}
 
-#usecase1 .block, #usecase2 .block {
+#usecase1 .block, #usecase2 .block, #usecase3 .block {
     border: 1px solid black;
     background: white;
+}
+
+#green {
+    border: 2px dashed red;
+    background: green;
+
 }
         </style>
     </head>
     <body>
-        <h3>Block positions</h3>
+        <h2>Критерии аттестации</h2>
+        <h4>Пример 1</h4>
+
+        <div id="usecase1" dia-grid-size="20px">
+            <div id="block1" class="block" dia-size="80px:320px">1</div>
+            <div id="block2" class="block" dia-pos="block1+E+80px" dia-align="a1" dia-size="80px:80px">2</div>
+            <div id="block3" class="block" dia-pos="block2+S+40px" dia-size="80px:80px">3</div>
+            <div id="block4" class="block" dia-pos="block3+S+40px" dia-size="80px:80px">4 </div>
+
+            <div dia-line-start="block1+N+rhombus" dia-line-end="block2+N+angle"></div>
+            <div dia-line-start="block1+E+circle"  dia-line-end="block3+W+triangle"></div>
+            <div dia-line-start="block1+SE+angle"  dia-line-end="block4+NW+circle"></div>
+        </div>
+
+
+        <h4>Пример 2</h4>
+
+        <div id="usecase2" dia-grid-size="10px">
+            <div id="block1" class="block" dia-size="140px:120px">1</div>
+            <div id="block2" class="block" dia-pos="block1+W+140px" dia-align="b1" dia-size="140px:120px">2</div>
+
+            <div id="block3" class="block" dia-pos="block1+S+60px" dia-align="a3" dia-size="60px:140px">3</div>
+            <div id="block4" class="block" dia-pos="block1+S+60px" dia-align="c2" dia-size="100px:50px">4</div>
+
+            <div id="block6" class="block" dia-pos="block2+S+40px" dia-size="100px:50px">6</div>
+
+            <div id="block7" class="block" dia-pos="block6+S+40px">7</div>
+
+            <div id="block5" class="block" dia-type="ellipse" dia-pos="block3+S+60px" dia-size="80px:30px">5</div>
+
+            <div dia-line-start="block1+W+circle"  dia-line-end="block2+NE+angle">text1</div>
+            <div dia-line-start="block1+S+rhombus" dia-line-end="block3+N+angle"></div>
+            <div dia-line-start="block1+S+rhombus" dia-line-end="block4+N+angle"></div>
+            <div dia-line-start="block3+S+triangle" dia-line-end="block5+N">text2 </div>
+
+            <div dia-line-start="block2+S" dia-line-end="block6+N"></div>
+            <div dia-line-start="block6+S+rhombus" dia-line-end="block7+N+triangle"></div>
+        </div>
+
+        <h4>Пример 3</h4>
+
+        <div id="usecase3">
+            <div id="block1" class="block" dia-size="10:1">1</div>
+
+            <div id="block2"
+                 class="block"
+                 dia-pos="block1+S+25px"
+                 dia-align="a1"
+                 dia-size="1:3"
+                 >22
+            </div>
+
+            <div id="green" dia-pos="block1+S+50px" dia-align="c3" >3333333333 </div>
+            <div dia-line-start="block2+E"
+                 dia-line-end="green+W+triangle"
+                 dia-text-pos="start"
+                 dia-line-style="3px dotted blue">text1
+            </div>
+        </div>
+        <h2>Иллюстрации значений некоторых атрибутов<h2>
+        <h4>Позиции блоков</h4>
+        <p>
+        <b>dia-pos = ID + (N | S | W | E | NW | NE | SW | SE) + %Pixels</b><br>
+        Является обязательным атрибутом, если у этого блока не указана абсолютная позиция. Атрибут может быть не указан только у одного блока.<br>
+        Значение содержит три параметра:<br>
+
+        <ol>
+            <li>
+                Идентификатор блока, относительно которого указывается позиция
+            </li>
+
+            <li>
+                Позиция текущего блока относительно блока, указанного в первом значении. Возможные значения:
+                <ul>
+                    <li>N (Север): сверху от</li>
+                    <li>S (Юг): снизу от</li>
+                    <li>W (Запад): слева от</li>
+                    <li>E (Восток): справа от</li>
+                    <li>NW (Северо-Запад): слева сверху от</li>
+                    <li>NE (Северо-Восток): справа сверху от</li>
+                    <li>SW (Юго-Запад): слева снизу от</li>
+                    <li>SE (Юго-Восток): справа снизу от</li>
+                </ul>
+            </li>
+
+            <li>
+                Расстояние в пикселях относительно блока, указанного в первом аргументе
+            </li>
+        </ol>
+
+        </p>
         <div id="blockPos">
             <div id="el" class="block" dia-type="Ellipse" dia-size="140px:80px">Main</div>
 
@@ -41,7 +138,26 @@ $(function() {
             <div id="blsw" class="block" dia-pos="el+SW" dia-size="30px:30px">SW</div>
         </div>
 
-        <h3>Blocks aligment</h3>
+        <h4>Выравнивание блоков</h4>
+        <p>
+        <b>dia-align = A1 | A2 | A3 | B1 | B2 | B3 | C1 | C2 | C3</b><br>
+        <i>default: B2</i><br>
+        Выравнивание текущего блока относительно блока, указанного в первом значении атрибута dia-pos. 
+        <br>Значение атрибута состоит из двух символов:
+        </p>
+
+        <ul>
+            <li>
+                буква задает точку на блоке, указанном в первом значении атрибута dia-pos
+            </li>
+            <li>
+                цифра задает точку на текущем блоке.
+            </li>
+        </ul>
+
+        <p>
+        На созданном изображении указанные точки блоков будут находится на одном уровне.
+        </p>
         <div id="blockAlign" dia-grid-size="1px">
             <div id="main" class="block" dia-size="150px:150px">Main</div>
 
@@ -86,50 +202,9 @@ $(function() {
             <div dia-pos="main+E+40px"  dia-align="c3" dia-size="35px:35px">C3</div>
         </div>
 
-        <h3>Rectangle blocks sizes</h3>
-        <div id="rectSizes">
-            <div id="bl11" class="block" dia-size="5px:1px">5px:1px</div>
-            <div id="bl12" class="block" dia-pos="bl11+s" dia-size="5px:5px">5px:5px</div>
-            <div id="bl13" class="block" dia-pos="bl12+s" dia-size="130px:50px">130px:40px</div>
+        <h4>Возможные значения позиций подписей и внешнего вида соед. линий</h4>
 
-            <div id="bl21" class="block" dia-pos="bl11+e+50px" dia-align="a1" dia-size="3:4">dia-size="3:4"</div>
-            <div id="bl22" class="block" dia-pos="bl21+s" dia-size="4:3">dia-size="4:3"</div>
-            <div id="bl23" class="block" dia-pos="bl22+s" dia-size="10:1">dia-size="10:1"</div>
 
-            <div id="bl31" class="block" dia-pos="bl21+e+100px" dia-align="a1" dia-size="3:4">
-                3:4<br>3:4<br>3:4<br>3:4<br>
-            </div>
-            <div id="bl32" class="block" dia-pos="bl31+s" dia-size="4:3">
-                4:3<br>4:3<br>4:3<br>4:3<br>4:3<br>
-            </div>
-            <div id="bl33" class="block" dia-pos="bl32+s" dia-size="1:5">
-                1:5<br>1:5<br>1:5<br>
-            </div>
-        </div>
-
-        <h3>Ellipse blocks sizes</h3>
-        <div id="ellipseSizes">
-            <div id="el11" class="block" dia-type="ellipse" dia-size="5px:1px">5px:1px</div>
-            <div id="el12" class="block" dia-type="ellipse" dia-pos="el11+s" dia-size="5px:5px">5px:5px</div>
-            <div id="el13" class="block" dia-type="ellipse" dia-pos="el12+s" dia-size="135px:50px">135px:40px</div>
-            <div id="el14" class="block" dia-type="ellipse" dia-pos="el13+s" dia-size="140px:50px">140px:40px</div>
-
-            <div id="el21" class="block" dia-type="ellipse" dia-pos="el11+e+50px" dia-align="a1" dia-size="3:4">dia-size="3:4"</div>
-            <div id="el22" class="block" dia-type="ellipse" dia-pos="el21+s" dia-size="4:3">dia-size="4:3"</div>
-            <div id="el23" class="block" dia-type="ellipse" dia-pos="el22+s" dia-size="10:1">dia-size="10:1"</div>
-
-            <div id="el31" class="block" dia-type="ellipse" dia-pos="el21+e+100px" dia-align="a1" dia-size="3:4">
-                3:4<br>3:4<br>3:4<br>3:4<br>
-            </div>
-            <div id="el32" class="block" dia-type="ellipse" dia-pos="el31+s" dia-size="4:3"> 
-                4:3<br>4:3<br>4:3<br>4:3<br>4:3<br> 
-            </div>
-            <div id="el33" class="block" dia-type="ellipse" dia-pos="el32+s" dia-size="1:5"> 
-                1:5<br>1:5<br>1:5<br>
-            </div>
-        </div>
-
-        <h3>Captions positions and lines styles</h3>
         <div id="capPos" dia-caption-offset="2px">
             <div id="bl1" class="block" dia-size="160px:160px">1</div>
             <div id="bl2" class="block" dia-pos="bl1+N+150px" dia-size="240px:40px">2</div>
@@ -158,50 +233,67 @@ $(function() {
             <div dia-line-start="bl4+e+triangle" dia-line-end="bl7+w+triangle" dia-text-pos="center" dia-direction="ver">Text 4-7</div>
         </div>
 
-        <h3>Stuff</h3>
 
-        Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod
-        tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At
-        vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren,
-        no sea takimata sanctus est Lorem ipsum dolor sit amet.
+        <h3>Связь размеров блоков со значениеми атрибута dia-size</h3>
+        <p>
+        <b>dia-size = %Pixels:%Pixels | NUMBER:NUMBER</b> <br>
+        Задет минимальный размер блока, если указаны "px". Если не указаны, то пропорции.
+        </p>
+        
+        <ul>
+            <li>
+                Минимальный размер означет, что размер блока не может принимать значение меньше указанного.
+                Значение атрибута состоит из двух чисел – длины и ширины.
+                Если размер текста будет больше, чем минимальный размер, то размер блока будем таким, что 
+                текст не выходит за границы блока и при этом имеет те же пропорции, что и указанный мнимальный размер.
+            </li>
+            <li> 
+                Значение пропорций состоит из двух чисел – соотношения длины блока к ширине.
+            </li>
+        </ul>
+        <h4>Блоки-прямоугольники</h4>
+        <div id="rectSizes">
+            <div id="bl11" class="block" dia-size="5px:1px">5px:1px</div>
+            <div id="bl12" class="block" dia-pos="bl11+s" dia-size="5px:5px">5px:5px</div>
+            <div id="bl13" class="block" dia-pos="bl12+s" dia-size="130px:50px">130px:40px</div>
 
-        <div id="usecase1" dia-grid-size="20px">
-            <div id="block1" class="block" dia-size="80px:320px">1</div>
-            <div id="block2" class="block" dia-pos="block1+E+80px" dia-align="a1" dia-size="80px:80px">2</div>
-            <div id="block3" class="block" dia-pos="block2+S+40px" dia-size="80px:80px">3</div>
-            <div id="block4" class="block" dia-pos="block3+S+40px" dia-size="80px:80px">4 </div>
+            <div id="bl21" class="block" dia-pos="bl11+e+50px" dia-align="a1" dia-size="3:4">dia-size="3:4"</div>
+            <div id="bl22" class="block" dia-pos="bl21+s" dia-size="4:3">dia-size="4:3"</div>
+            <div id="bl23" class="block" dia-pos="bl22+s" dia-size="10:1">dia-size="10:1"</div>
 
-            <div dia-line-start="block1+N+rhombus" dia-line-end="block2+N+angle"></div>
-            <div dia-line-start="block1+E+circle"  dia-line-end="block3+W+triangle"></div>
-            <div dia-line-start="block1+SE+angle"  dia-line-end="block4+NW+circle"></div>
+            <div id="bl31" class="block" dia-pos="bl21+e+100px" dia-align="a1" dia-size="3:4">
+                3:4<br>3:4<br>3:4<br>3:4<br>
+            </div>
+            <div id="bl32" class="block" dia-pos="bl31+s" dia-size="4:3">
+                4:3<br>4:3<br>4:3<br>4:3<br>4:3<br>
+            </div>
+            <div id="bl33" class="block" dia-pos="bl32+s" dia-size="1:5">
+                1:5<br>1:5<br>1:5<br>
+            </div>
         </div>
 
-        Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod
-        tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At
-        vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren,
-        no sea takimata sanctus est Lorem ipsum dolor sit amet.
+        <h4>Блоки-эллипсы</h4>
+        <div id="ellipseSizes">
+            <div id="el11" class="block" dia-type="ellipse" dia-size="5px:1px">5px:1px</div>
+            <div id="el12" class="block" dia-type="ellipse" dia-pos="el11+s" dia-size="5px:5px">5px:5px</div>
+            <div id="el13" class="block" dia-type="ellipse" dia-pos="el12+s" dia-size="135px:50px">135px:40px</div>
+            <div id="el14" class="block" dia-type="ellipse" dia-pos="el13+s" dia-size="140px:50px">140px:40px</div>
 
-        <div id="usecase2" dia-grid-size="10px">
-            <div id="block1" class="block" dia-size="140px:120px">1</div>
-            <div id="block2" class="block" dia-pos="block1+W+140px" dia-align="b1" dia-size="140px:120px">2</div>
+            <div id="el21" class="block" dia-type="ellipse" dia-pos="el11+e+50px" dia-align="a1" dia-size="3:4">dia-size="3:4"</div>
+            <div id="el22" class="block" dia-type="ellipse" dia-pos="el21+s" dia-size="4:3">dia-size="4:3"</div>
+            <div id="el23" class="block" dia-type="ellipse" dia-pos="el22+s" dia-size="10:1">dia-size="10:1"</div>
 
-            <div id="block3" class="block" dia-pos="block1+S+60px" dia-align="a3" dia-size="60px:140px">3</div>
-            <div id="block4" class="block" dia-pos="block1+S+60px" dia-align="c2" dia-size="100px:50px">4</div>
-
-            <div id="block6" class="block" dia-pos="block2+S+40px" dia-size="100px:50px">6</div>
-
-            <div id="block7" class="block" dia-pos="block6+S+40px">7</div>
-
-            <div id="block5" class="block" dia-type="ellipse" dia-pos="block3+S+60px" dia-size="80px:30px">5</div>
-
-            <div dia-line-start="block1+W+circle"  dia-line-end="block2+NE+angle">text1</div>
-            <div dia-line-start="block1+S+rhombus" dia-line-end="block3+N+angle"></div>
-            <div dia-line-start="block1+S+rhombus" dia-line-end="block4+N+angle"></div>
-            <div dia-line-start="block3+S+triangle" dia-line-end="block5+N">text2 </div>
-
-            <div dia-line-start="block2+S" dia-line-end="block6+N"></div>
-            <div dia-line-start="block6+S+rhombus" dia-line-end="block7+N+triangle"></div>
+            <div id="el31" class="block" dia-type="ellipse" dia-pos="el21+e+100px" dia-align="a1" dia-size="3:4">
+                3:4<br>3:4<br>3:4<br>3:4<br>
+            </div>
+            <div id="el32" class="block" dia-type="ellipse" dia-pos="el31+s" dia-size="4:3"> 
+                4:3<br>4:3<br>4:3<br>4:3<br>4:3<br> 
+            </div>
+            <div id="el33" class="block" dia-type="ellipse" dia-pos="el32+s" dia-size="1:5"> 
+                1:5<br>1:5<br>1:5<br>
+            </div>
         </div>
+
 
     </body>
 </html>
