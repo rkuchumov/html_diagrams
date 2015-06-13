@@ -79,10 +79,11 @@ var dia = (function() {
          */
         function getAttribs_(elem) {
             var attr = {};
-            $(elem.attributes).each(function() {
-                    var name = this.nodeName.toLowerCase();
-                    attr[name] = this.value.toLowerCase();
-                });
+            for (var i = 0; i < elem.attributes.length; i++) {
+                var e = elem.attributes[i];
+                var name = e.name.toLowerCase();
+                attr[name] = e.value.toLowerCase();
+            }
 
             return attr;
         }
@@ -180,13 +181,15 @@ var dia = (function() {
          * @param {String} id DOM's id of an object contating diagam description
          */
         pub.draw = function(id) {
-            console.assert(typeof (jQuery) != 'undefined', 
-                'jQuery is not loaded');
             console.assert(typeof (id) == 'string', 
                 'Incorrect diagram id: ' + id);
 
             try {
-                var cfg = new Config($('#' + id)[0]);
+                var elem = document.getElementById(id);
+                if (elem == undefined)
+                    throw 'diagram element is not found';
+
+                var cfg = new Config(elem);
 
                 var blocks = [];
                 var lines = [];
@@ -210,12 +213,12 @@ var dia = (function() {
         function setDivDefaultCSS_(elem) {
             console.assert(elem instanceof Element, 'Empty diagam DOM object');
 
-            $(elem).css({'position': 'absolute'});
-            $(elem).css({'height': 'auto'});
-            $(elem).css({'width': 'auto'});
-            $(elem).css({'white-space': 'nowrap'});
-            $(elem).css({'word-wrap': 'break-word'});
-            $(elem).css({'text-align': 'center'});
+            elem.style['position'] = 'absolute';
+            elem.style['height'] = 'auto';
+            elem.style['width'] = 'auto';
+            elem.style['white-space'] = 'nowrap';
+            elem.style['word-wrap'] = 'break-word';
+            elem.style['text-align'] = 'center';
         }
 
         /** Travels diagram's child objects(DOM) and creates line or block instance 
@@ -230,23 +233,25 @@ var dia = (function() {
 
             var blocks = [];
             var lines = [];
-            $(cfg.elem).children().each(function(id, e) {
-                    try {
-                        setDivDefaultCSS_(e);
+            for (var i = 0; i < cfg.elem.children.length; i++) {
+                var e = cfg.elem.children[i];
 
-                        var attribs = getAttribs_(e);
-                        delete getType_.hasPivot;
-                        var t = getType_(attribs);
+                try {
+                    setDivDefaultCSS_(e);
 
-                        if (t != Type.line) {
-                            blocks.push(new Block(cfg, attribs, e));
-                        } else {
-                            lines.push(new Line(attribs, e));
-                        }
-                    } catch(str) {
-                        throw '#' + attribs.id + ': ' + str;
+                    var attribs = getAttribs_(e);
+                    delete getType_.hasPivot;
+                    var t = getType_(attribs);
+
+                    if (t != Type.line) {
+                        blocks.push(new Block(cfg, attribs, e));
+                    } else {
+                        lines.push(new Line(attribs, e));
                     }
-                });
+                } catch(str) {
+                    throw '#' + attribs.id + ': ' + str;
+                }
+            }
 
             try {
                 checkIdScope_(blocks, lines);
@@ -807,19 +812,19 @@ var dia = (function() {
             var right = -Number.MAX_VALUE;
             var top_ = Number.MAX_VALUE;
             var bottom = -Number.MAX_VALUE;
-            $.each(blocks, function(i, block) {
-                    var l = block.coords.x - block.size.w / 2;
-                    if (l < left) left = l;
+            for (var i = 0; i < blocks.length; i++) {
+                var l = blocks[i].coords.x - blocks[i].size.w / 2;
+                if (l < left) left = l;
 
-                    var r = block.coords.x + block.size.w / 2;
-                    if (r > right) right = r;
+                var r = blocks[i].coords.x + blocks[i].size.w / 2;
+                if (r > right) right = r;
 
-                    var t = block.coords.y - block.size.h / 2;
-                    if (t < top_) top_ = t;
+                var t = blocks[i].coords.y - blocks[i].size.h / 2;
+                if (t < top_) top_ = t;
 
-                    var b = block.coords.y + block.size.h / 2;
-                    if (b > bottom) bottom = b;
-                });
+                var b = blocks[i].coords.y + blocks[i].size.h / 2;
+                if (b > bottom) bottom = b;
+            }
 
             left -= 2 * cfg.gridSize;
             right += 2 * cfg.gridSize;
@@ -834,10 +839,10 @@ var dia = (function() {
                 h += cfg.gridSize - h % cfg.gridSize;
             cfg.imgSize = new Size(w, h);
 
-            $.each(blocks, function(i, block) {
-                    block.coords.x += -left;
-                    block.coords.y += -top_;
-                });
+            for (var i = 0; i < blocks.length; i++) {
+                    blocks[i].coords.x += -left;
+                    blocks[i].coords.y += -top_;
+            }
         }
 
         /** Checks if there is two blocks overlapping each other
@@ -876,33 +881,36 @@ var dia = (function() {
             console.assert(typeof (cfg.imgSize) != null, 
                 'Incorrect function arguments');
 
-            $(cfg.elem).css({'width': cfg.imgSize.w});
-            $(cfg.elem).css({'height': cfg.imgSize.h});
-            $(cfg.elem).css({'position': 'relative'});
+            cfg.elem.style['width'] = cfg.imgSize.w + 'px';
+            cfg.elem.style['height'] = cfg.imgSize.h + 'px';
+            cfg.elem.style['position'] = 'relative';
 
-            $.each(blocks, function(i, block) {
-                    var top_ = block.coords.y - block.size.h / 2;
-                    var left = block.coords.x - block.size.w / 2;
+            for (var i = 0; i < blocks.length; i++) {
+                var block = blocks[i];
+                var top_ = block.coords.y - block.size.h / 2;
+                var left = block.coords.x - block.size.w / 2;
 
-                    $(block.elem).css({'top': top_});
-                    $(block.elem).css({'left': left});
-                    $(block.elem).css({'width': block.size.w});
-                    $(block.elem).css({'height': block.size.h});
+                block.elem.style['top'] = top_ + 'px';
+                block.elem.style['left'] = left + 'px';
+                block.elem.style['width'] = block.size.w + 'px';
+                block.elem.style['height'] = block.size.h + 'px';
 
-                    if (block.type == Type.ellipse) {
-                        var r = (block.size.w / 2) + "px/" +
-                            (block.size.h / 2) + "px";
-                        $(block.elem).css({'-moz-border-radius': r});
-                        $(block.elem).css({'-webkit-border-radius': r});
-                        $(block.elem).css({'border-radius': r});
-                    }
+                if (block.type == Type.ellipse) {
+                    var r = (block.size.w / 2) + "px/" +
+                        (block.size.h / 2) + "px";
+                    block.elem.style['-moz-border-radius'] = r;
+                    block.elem.style['-webkit-border-radius'] = r;
+                    block.elem.style['border-radius'] = r;
+                }
 
-                    $(block.elem).wrapInner('<span></span>');
-                    $(block.elem).children(':first').css({'display': 'table-cell'});
-                    $(block.elem).children(':first').css({'vertical-align': 'middle'});
-                    $(block.elem).children(':first').css({'height': block.size.h});
-                    $(block.elem).children(':first').css({'width': block.size.w});
-                });
+                var h = '<span>' + block.elem.innerHTML + '</span>';
+                block.elem.innerHTML = h;
+
+                block.elem.children[0].style['display'] = 'table-cell';
+                block.elem.children[0].style['vertical-align'] = 'middle';
+                block.elem.children[0].style['height'] = block.size.h + 'px';
+                block.elem.children[0].style['width'] = block.size.w + 'px';
+            }
         }
 
         function findBlock_(blocks, id) {
@@ -930,38 +938,41 @@ var dia = (function() {
             var g = new Grid(cfg, blocks);
             fillGrid_(g, blocks);
             
-            $.each(lines, function(i, line) {
-                    // XXX: ends postions 
-                    var s = findBlock_(blocks, line.startBlockId);
 
-                    if (s.type == Type.ellipse && 
-                        (Math.abs(line.startBlockPos.x) + Math.abs(line.startBlockPos.y) == 2))
-                    {
-                        throw 'NW, NE, SW, SE line positions for ellipses is not implimented';
-                    }
+            for (var i = 0; i < lines.length; i++) {
+                var line = lines[i];
 
-                    var stX = s.coords.x + 0.5 * s.size.w * line.startBlockPos.x;
-                    var stY = s.coords.y + 0.5 * s.size.h * line.startBlockPos.y;
-                    var start = new Point(
-                        Math.round(stX / g.h), Math.round(stY / g.h)
-                    );
+                // XXX: ends postions 
+                var s = findBlock_(blocks, line.startBlockId);
 
-                    var e = findBlock_(blocks, line.endBlockId);
+                if (s.type == Type.ellipse && 
+                    (Math.abs(line.startBlockPos.x) + Math.abs(line.startBlockPos.y) == 2))
+                {
+                    throw 'NW, NE, SW, SE line positions for ellipses is not implimented';
+                }
 
-                    if (e.type == Type.ellipse && 
-                        (Math.abs(line.endBlockPos.x) + Math.abs(line.endBlockPos.y) == 2))
-                    {
-                        throw 'NW, NE, SW, SE line positions for ellipses is not implimented';
-                    }
+                var stX = s.coords.x + 0.5 * s.size.w * line.startBlockPos.x;
+                var stY = s.coords.y + 0.5 * s.size.h * line.startBlockPos.y;
+                var start = new Point(
+                    Math.round(stX / g.h), Math.round(stY / g.h)
+                );
 
-                    var enX = e.coords.x + 0.5 * e.size.w * line.endBlockPos.x;
-                    var enY = e.coords.y + 0.5 * e.size.h * line.endBlockPos.y;
-                    var end = new Point(
-                        Math.round(enX / g.h), Math.round(enY / g.h)
-                    );
+                var e = findBlock_(blocks, line.endBlockId);
 
-                    line.points = findPath(g, start, end);
-                });
+                if (e.type == Type.ellipse && 
+                    (Math.abs(line.endBlockPos.x) + Math.abs(line.endBlockPos.y) == 2))
+                {
+                    throw 'NW, NE, SW, SE line positions for ellipses is not implimented';
+                }
+
+                var enX = e.coords.x + 0.5 * e.size.w * line.endBlockPos.x;
+                var enY = e.coords.y + 0.5 * e.size.h * line.endBlockPos.y;
+                var end = new Point(
+                    Math.round(enX / g.h), Math.round(enY / g.h)
+                );
+
+                line.points = findPath(g, start, end);
+            }
         }
 
         function Grid(cfg) {
@@ -1023,25 +1034,28 @@ var dia = (function() {
                 for (var i = 0; i < grid.n; i++)
                     grid.setEmpty(i, j, true);
 
-            $.each(blocks, function(i, block) {
-                    console.assert(block instanceof Block, 
-                        'Incorrect function arguments');
+            for (var k = 0; k < blocks.length; k++) {
+                var block = blocks[k];
 
-                    var l = block.coords.x - 0.5 * block.size.w;
-                    var r = block.coords.x + 0.5 * block.size.w;
-                    var b = block.coords.y - 0.5 * block.size.h;
-                    var t = block.coords.y + 0.5 * block.size.h;
+                console.assert(block instanceof Block, 
+                    'Incorrect function arguments');
 
-                    for (var j = 0; j < grid.m; j++) {
-                        for (var i = 0; i < grid.n; i++) {
-                            var x = i * grid.h;
-                            var y = j * grid.h;
+                var l = block.coords.x - 0.5 * block.size.w;
+                var r = block.coords.x + 0.5 * block.size.w;
+                var b = block.coords.y - 0.5 * block.size.h;
+                var t = block.coords.y + 0.5 * block.size.h;
 
-                            if (x >= l && x <= r && y >= b && y <= t)
-                                grid.setEmpty(i, j, false);
-                        }
+                for (var j = 0; j < grid.m; j++) {
+                    for (var i = 0; i < grid.n; i++) {
+                        var x = i * grid.h;
+                        var y = j * grid.h;
+
+                        if (x >= l && x <= r && y >= b && y <= t)
+                            grid.setEmpty(i, j, false);
                     }
-                });
+                }
+
+            }
 
             for (var j = 0; j < grid.m; j++) {
                 grid.setEmpty(0, j, false);
@@ -1158,14 +1172,12 @@ var dia = (function() {
                 'Incorrect function arguments');
 
             var id = cfg.id + 'Canvas';
-            var can = '<canvas ' + 
+            cfg.elem.insertAdjacentHTML('beforeend', '<canvas ' + 
                 'id="' + id + '" ' + 
-                'width="' + cfg.imgSize.w + '" ' +
-                'height="' + cfg.imgSize.h + '">' +
+                'width="' + cfg.imgSize.w + 'px" ' +
+                'height="' + cfg.imgSize.h + 'px">' +
                 'Your browser does not support the HTML5 canvas tag.' + 
-                '</canvas>';
-
-            $(cfg.elem).append(can);
+                '</canvas>');
 
             var canvas = document.getElementById(id);
             if (!canvas.getContext) {
@@ -1174,73 +1186,75 @@ var dia = (function() {
 
             var ctx = canvas.getContext('2d');
 
-            $.each(lines, function(i, line) {
-                    console.assert(line instanceof Line, 
-                        'Incorrect function arguments');
+            for (var i = 0; i < lines.length; i++) {
+                var line = lines[i];
 
-                    ctx.beginPath();
-                    ctx.strokeStyle = line.lineColor;
-                    ctx.lineWidth = line.lineWidth;
-                    ctx.fillStyle = line.lineColor;
+                console.assert(line instanceof Line, 
+                    'Incorrect function arguments');
 
-                    if (line.lineStyle == LineStyle.dotted) {
-                        ctx.setLineDash([line.lineWidth,line.lineWidth]);
-                    } else if (line.lineStyle == LineStyle.dashed) {
-                        ctx.setLineDash([
-                                4 * line.lineWidth,
-                                1.5 * line.lineWidth
-                            ]);
-                    } else {
-                        ctx.setLineDash([]);
-                    }
-                    var prev = line.points[0];
-                    ctx.moveTo(prev.x, prev.y);
-                    var cur = line.points[1];
-                    ctx.lineTo(cur.x, cur.y);
+                ctx.beginPath();
+                ctx.strokeStyle = line.lineColor;
+                ctx.lineWidth = line.lineWidth;
+                ctx.fillStyle = line.lineColor;
 
-                    var n = line.points.length;
-                    console.assert(n >= 2, 'Lines path is empty');
-
-                    for (var j = 2; j < n; j++) {
-                        prev = cur;
-                        cur = line.points[j];
-
-                        ctx.moveTo(prev.x, prev.y);
-                        ctx.lineTo(cur.x, cur.y);
-                    }
-                    ctx.stroke();
-                    ctx.closePath();
-
+                if (line.lineStyle == LineStyle.dotted) {
+                    ctx.setLineDash([line.lineWidth,line.lineWidth]);
+                } else if (line.lineStyle == LineStyle.dashed) {
+                    ctx.setLineDash([
+                            4 * line.lineWidth,
+                            1.5 * line.lineWidth
+                        ]);
+                } else {
                     ctx.setLineDash([]);
+                }
+                var prev = line.points[0];
+                ctx.moveTo(prev.x, prev.y);
+                var cur = line.points[1];
+                ctx.lineTo(cur.x, cur.y);
 
-                    var start = line.points[0];
-                    var startDir = new Point(start.x - line.points[1].x,
-                        start.y - line.points[1].y);
+                var n = line.points.length;
+                console.assert(n >= 2, 'Lines path is empty');
 
-                    var end = line.points[n - 1];
-                    var endDir = new Point(end.x - line.points[n - 2].x,
-                        end.y - line.points[n - 2].y);
+                for (var j = 2; j < n; j++) {
+                    prev = cur;
+                    cur = line.points[j];
 
-                    if (line.startStyle == LineEnd.angle) {
-                        drawAngleEnd(cfg, ctx, start, startDir);
-                    } else if (line.startStyle == LineEnd.triangle) {
-                        drawTriangleEnd(cfg, ctx, start, startDir);
-                    } else if (line.startStyle == LineEnd.circle) {
-                        drawCircleEnd(cfg, ctx, start, startDir);
-                    } else if (line.startStyle == LineEnd.rhombus) {
-                        drawRhombusEnd(cfg, ctx, start, startDir);
-                    }
+                    ctx.moveTo(prev.x, prev.y);
+                    ctx.lineTo(cur.x, cur.y);
+                }
+                ctx.stroke();
+                ctx.closePath();
 
-                    if (line.endStyle == LineEnd.angle) {
-                        drawAngleEnd(cfg, ctx, end, endDir);
-                    } else if (line.endStyle == LineEnd.triangle) {
-                        drawTriangleEnd(cfg, ctx, end, endDir);
-                    } else if (line.endStyle == LineEnd.circle) {
-                        drawCircleEnd(cfg, ctx, end, endDir);
-                    } else if (line.endStyle == LineEnd.rhombus) {
-                        drawRhombusEnd(cfg, ctx, end, endDir);
-                    }
-                });
+                ctx.setLineDash([]);
+
+                var start = line.points[0];
+                var startDir = new Point(start.x - line.points[1].x,
+                    start.y - line.points[1].y);
+
+                var end = line.points[n - 1];
+                var endDir = new Point(end.x - line.points[n - 2].x,
+                    end.y - line.points[n - 2].y);
+
+                if (line.startStyle == LineEnd.angle) {
+                    drawAngleEnd(cfg, ctx, start, startDir);
+                } else if (line.startStyle == LineEnd.triangle) {
+                    drawTriangleEnd(cfg, ctx, start, startDir);
+                } else if (line.startStyle == LineEnd.circle) {
+                    drawCircleEnd(cfg, ctx, start, startDir);
+                } else if (line.startStyle == LineEnd.rhombus) {
+                    drawRhombusEnd(cfg, ctx, start, startDir);
+                }
+
+                if (line.endStyle == LineEnd.angle) {
+                    drawAngleEnd(cfg, ctx, end, endDir);
+                } else if (line.endStyle == LineEnd.triangle) {
+                    drawTriangleEnd(cfg, ctx, end, endDir);
+                } else if (line.endStyle == LineEnd.circle) {
+                    drawCircleEnd(cfg, ctx, end, endDir);
+                } else if (line.endStyle == LineEnd.rhombus) {
+                    drawRhombusEnd(cfg, ctx, end, endDir);
+                }
+            }
         }
 
         function drawAngleEnd(cfg, ctx, point, dir) {
@@ -1474,8 +1488,7 @@ var dia = (function() {
                 dx = line.points[s].x - line.points[s - 1].x;
                 dy = line.points[s].y - line.points[s - 1].y;
 
-                p = new Point();
-                $.extend(p, line.points[s - 1]);
+                p = new Point(line.points[s - 1].x, line.points[s - 1].y);
                 if (dx < 0)
                     p.x -= len / 2 - l; 
                 else if (dx > 0)
@@ -1545,13 +1558,13 @@ var dia = (function() {
             console.assert(lines instanceof Array, 
                 'Incorrect function arguments');
 
-            $.each(lines, function(i, line) {
-                    console.assert(line instanceof Line, 
-                        'Incorrect function arguments');
-                    if (!$(line.elem).is(':empty')) {
-                        captionPos_(cfg, line);
-                    }
-                });
+            for (var i = 0; i < lines.length; i++) {
+                console.assert(lines[i] instanceof Line, 
+                    'Incorrect function arguments');
+                if (lines[i].elem.innerHTML != '') {
+                    captionPos_(cfg, lines[i]);
+                }
+            }
         }
 
         function drawCaptions_(cfg, lines) {
@@ -1566,16 +1579,16 @@ var dia = (function() {
                     continue;
 
                 if (l.capDir == CapDir.ver) {
-                    $(l.elem).css({'-webkit-transform': 'rotate(-90deg)'});
-                    $(l.elem).css({'-moz-transform': 'rotate(-90deg)'});
-                    $(l.elem).css({'-ms-transform': 'rotate(-90deg)'});
-                    $(l.elem).css({'-o-transform': 'rotate(-90deg)'});
-                    $(l.elem).css({'filter': 
-                            'progid:DXImageTransform.Microsoft.BasicImage(rotation=3)'});
+                    l.elem.style['-webkit-transform'] = 'rotate(-90deg)';
+                    l.elem.style['-moz-transform'] = 'rotate(-90deg)';
+                    l.elem.style['-ms-transform'] = 'rotate(-90deg)';
+                    l.elem.style['-o-transform'] = 'rotate(-90deg)';
+                    l.elem.style['filter'] =  
+                            'progid:DXImageTransform.Microsoft.BasicImage(rotation=3)';
                 }
 
-                $(l.elem).css({'top': l.capCoords.y});
-                $(l.elem).css({'left': l.capCoords.x});
+                l.elem.style['top'] = l.capCoords.y + 'px';
+                l.elem.style['left'] = l.capCoords.x + 'px';
             }
         }
 

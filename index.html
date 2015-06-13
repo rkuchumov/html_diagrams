@@ -2,10 +2,9 @@
 <html>
     <head>
         <meta charset="utf-8" />
-        <script src="jquery-2.1.1.min.js" type="text/javascript" charset="utf-8"></script>
         <script src="dia.js" type="text/javascript" charset="utf-8"></script>
         <script type="text/javascript" charset="utf-8">
-$(function() {
+function draw() {
     dia.draw("blockPos");
     dia.draw("capPos");
     dia.draw("blockAlign");
@@ -15,7 +14,7 @@ $(function() {
     dia.draw("usecase1");
     dia.draw("usecase2");
     dia.draw("usecase3");
-});
+};
         </script>
         <style type="text/css" media="screen">
 .block, #blockAlign div {background: #aaa;}
@@ -32,7 +31,7 @@ $(function() {
 }
         </style>
     </head>
-    <body>
+    <body onload="draw();">
         <h2>Критерии аттестации</h2>
         <h4>Пример 1</h4>
 
