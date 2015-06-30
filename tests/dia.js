@@ -1,6 +1,6 @@
 var dia = (function() { 
         var pub = {};
-        // console.assert = function() {};
+        console.assert = function() {};
 
         var EPS = 1e-9;
 
@@ -1022,6 +1022,8 @@ var dia = (function() {
                 var x = id % this.n;
                 return new Point(x, y);
             }
+
+            this.g = g;
         }
 
         function fillGrid_(grid, blocks) {
@@ -1657,5 +1659,1285 @@ var dia = (function() {
                 assert.deepEqual(ret, {'id': "11", 'dia-size': "29px:43px"});
             });
 
+        QUnit.test("Block", function(assert) {
+                var cfg = {gridSize: 10};
+                var e = document.createElement('div')
+                //UC1(1-7)
+                var atribs = {
+                    'dia-type': 'rectangle', 
+                    'dia-pos': 'block4+n+30px' , 
+                    'dia-align': 'a1', 
+                    'dia-size': '30px:40px', 
+                };
+
+                var b = new Block(cfg, atribs, e);
+                assert.ok(b.type = 1);
+                assert.ok(b.relId = 'block4');
+                assert.ok(b.relPos = {x: 0, y: -1});
+                assert.ok(b.relDist = 30);
+                assert.ok(b.alignCur = 0.5);
+                assert.ok(b.alignRel = -0.5);
+                assert.ok(b.minSize = {w: 30, h: 40});
+
+                //UC2(8)
+                var atribs = {
+                    'dia-type': 'rectangle', 
+                    'dia-pos': 'block4+n+30px', 
+                    'dia-align': 'a1', 
+                    'dia-size': '30px:40px',
+                    'dia-coords': '100px:50px:20px'
+                };
+
+                assert.throws(function() {
+                        new Block(cfg, atribs, e);
+                    });
+                //UC3(9)
+                var atribs = {
+                    'dia-type': 'rectangle', 
+                    'dia-pos': 'block4+n+30px', 
+                    'dia-align': 'a1', 
+                    'dia-size': '30px:40px',
+                    'dia-coords': '-100px:50px'
+                };
+
+                assert.throws(function() {
+                        new Block(cfg, atribs, e);
+                    });
+                //UC4  (10)        
+                var atribs = {
+                    'dia-type': 'rectangle', 
+                    'dia-pos': 'block4+n+30px', 
+                    'dia-align': 'a1', 
+                    'dia-size': '30px:40px',
+                    'dia-coords': '100px:50px'
+                };
+
+                assert.throws(function() {
+                        new Block(cfg, atribs, e);
+                    });
+                //UC5(11)
+                var atribs = {
+                    'dia-type': 'rectangle', 
+                    'dia-pos': 'block4+n+30px', 
+                    'dia-align': 'a1', 
+                    'dia-size': '30px:40px:10px',
+                    'dia-coords': '100px:50px'
+                };
+
+                assert.throws(function() {
+                        new Block(cfg, atribs, e);
+                    });
+
+                //UC6(12-19)
+
+                var atribs = {
+                    'dia-type': 'rectangle', 
+                    'dia-pos': 'block4+n+30px', 
+                    'dia-align': 'a1', 
+                    'dia-size': '3:4',
+
+                };
+
+                var b = new Block(cfg, atribs, e);
+                assert.ok(b.type = 1);
+                assert.ok(b.relId = 'block4');
+                assert.ok(b.relPos = {x: 0, y: -1});
+                assert.ok(b.relDist = 30);
+                assert.ok(b.alignCur = 0.5);
+                assert.ok(b.alignRel = -0.5);
+                assert.ok(b.prop = 0.75);
+                assert.ok(b.minSize = {w: 30, h: 40});
+
+
+                //UC7(20)
+                var atribs = {
+                    'dia-type': 'rectangle', 
+                    'dia-pos': 'block4+n+30px' , 
+                    'dia-align': 'a1', 
+                    'dia-size': '3:-4', 
+                    'dia-coords': '100px:50px'
+                };
+
+                assert.throws(function() {
+                        new Block(cfg, atribs, e);
+                    });
+
+                //UC8(21-28)
+                var atribs = {
+                    'dia-type': 'rectangle', 
+                    'dia-pos': 'block4+n+30px' , 
+                    'dia-align': 'a2', 
+                    'dia-size': '30px:40px', 
+
+                };
+
+                var b = new Block(cfg, atribs, e);
+                assert.ok(b.type = 1);
+                assert.ok(b.relId = 'block4');
+                assert.ok(b.relPos = {x: 0, y: -1});
+                assert.ok(b.relDist = 30);
+                assert.ok(b.alignCur = '0');
+                assert.ok(b.alignRel = -0.5);
+                assert.ok(b.minSize = {w: 30, h: 40});
+                assert.ok(b.coords = {x: 100, y: 50});
+
+                //UC9(29-36)
+                var atribs = {
+                    'dia-type': 'rectangle', 
+                    'dia-pos': 'block4+n+30px' , 
+                    'dia-align': 'a3', 
+                    'dia-size': '30px:40px', 
+
+                };
+
+                var b = new Block(cfg, atribs, e);
+                assert.ok(b.type = 1);
+                assert.ok(b.relId = 'block4');
+                assert.ok(b.relPos = {x: 0, y: -1});
+                assert.ok(b.relDist = 30);
+                assert.ok(b.alignCur = -0.5);
+                assert.ok(b.alignRel = -0.5);
+                assert.ok(b.minSize = {w: 30, h: 40});
+                assert.ok(b.coords = {x: 100, y: 50});
+
+                //UC10(37-44)
+                var atribs = {
+                    'dia-type': 'rectangle', 
+                    'dia-pos': 'block4+n+30px' , 
+                    'dia-align': 'b1', 
+                    'dia-size': '30px:40px', 
+
+                };
+
+                var b = new Block(cfg, atribs, e);
+                assert.ok(b.type = 1);
+                assert.ok(b.relId = 'block4');
+                assert.ok(b.relPos = {x: 0, y: -1});
+                assert.ok(b.relDist = 30);
+                assert.ok(b.alignCur = 0.5);
+                assert.ok(b.alignRel = '0');
+                assert.ok(b.minSize = {w: 30, h: 40});
+                assert.ok(b.coords = {x: 100, y: 50});
+
+
+                //UC11(45-52)
+                var atribs = {
+                    'dia-type': 'rectangle', 
+                    'dia-pos': 'block4+n+30px' , 
+                    'dia-align': 'b2', 
+                    'dia-size': '30px:40px', 
+
+                };
+
+                var b = new Block(cfg, atribs, e);
+                assert.ok(b.type = 1);
+                assert.ok(b.relId = 'block4');
+                assert.ok(b.relPos = {x: 0, y: -1});
+                assert.ok(b.relDist = 30);
+                assert.ok(b.alignCur = '0');
+                assert.ok(b.alignRel = '0');
+                assert.ok(b.minSize = {w: 30, h: 40});
+                assert.ok(b.coords = {x: 100, y: 50});
+
+                //UC12(53-60)
+                var atribs = {
+                    'dia-type': 'rectangle', 
+                    'dia-pos': 'block4+n+30px' , 
+                    'dia-align': 'b3', 
+                    'dia-size': '30px:40px', 
+
+                };
+
+                var b = new Block(cfg, atribs, e);
+                assert.ok(b.type = 1);
+                assert.ok(b.relId = 'block4');
+                assert.ok(b.relPos = {x: 0, y: -1});
+                assert.ok(b.relDist = 30);
+                assert.ok(b.alignCur = -0.5);
+                assert.ok(b.alignRel = '0');
+                assert.ok(b.minSize = {w: 30, h: 40});
+                assert.ok(b.coords = {x: 100, y: 50});
+
+                //UC13(61-68)
+                var atribs = {
+                    'dia-type': 'rectangle', 
+                    'dia-pos': 'block4+n+30px' , 
+                    'dia-align': 'c1', 
+                    'dia-size': '30px:40px', 
+
+                };
+
+                var b = new Block(cfg, atribs, e);
+                assert.ok(b.type = 1);
+                assert.ok(b.relId = 'block4');
+                assert.ok(b.relPos = {x: 0, y: -1});
+                assert.ok(b.relDist = 30);
+                assert.ok(b.alignCur = 0.5);
+                assert.ok(b.alignRel = 0.5);
+                assert.ok(b.minSize = {w: 30, h: 40});
+                assert.ok(b.coords = {x: 100, y: 50});
+
+                //UC14(69-76)
+                var atribs = {
+                    'dia-type': 'rectangle', 
+                    'dia-pos': 'block4+n+30px' , 
+                    'dia-align': 'c2', 
+                    'dia-size': '30px:40px', 
+
+                };
+
+                var b = new Block(cfg, atribs, e);
+                assert.ok(b.type = 1);
+                assert.ok(b.relId = 'block4');
+                assert.ok(b.relPos = {x: 0, y: -1});
+                assert.ok(b.relDist = 30);
+                assert.ok(b.alignCur = '0');
+                assert.ok(b.alignRel = 0.5);
+                assert.ok(b.minSize = {w: 30, h: 40});
+                assert.ok(b.coords = {x: 100, y: 50});
+
+                //UC15(77-84)
+                var atribs = {
+                    'dia-type': 'rectangle', 
+                    'dia-pos': 'block4+n+30px' , 
+                    'dia-align': 'c3', 
+                    'dia-size': '30px:40px', 
+
+                };
+
+                var b = new Block(cfg, atribs, e);
+                assert.ok(b.type = 1);
+                assert.ok(b.relId = 'block4');
+                assert.ok(b.relPos = {x: 0, y: -1});
+                assert.ok(b.relDist = 30);
+                assert.ok(b.alignCur = -0.5);
+                assert.ok(b.alignRel = 0.5);
+                assert.ok(b.minSize = {w: 30, h: 40});
+                assert.ok(b.coords = {x: 100, y: 50});
+
+                //UC16(85)
+                var atribs = {
+                    'dia-type': 'rectangle', 
+                    'dia-pos': 'block4+n+30px' , 
+                    'dia-align': 'aa1', 
+                    'dia-size': '30px:40px', 
+
+                };
+
+                assert.throws(function() {
+                        new Block(cfg, atribs, e);
+                    });
+
+                //UC17(86)
+                var atribs = {
+                    'dia-type': 'rectangle', 
+                    'dia-pos': 'block4+n+30px' , 
+                    'dia-align': 'a11', 
+                    'dia-size': '30px:40px', 
+
+                };
+
+                assert.throws(function() {
+                        new Block(cfg, atribs, e);
+                    });
+
+                //UC18(87)
+                var atribs = {
+                    'dia-type': 'rectangle', 
+                    'dia-pos': 'block4+n' , 
+                    'dia-align': 'a1', 
+                    'dia-size': '30px:40px', 
+                };
+
+                assert.throws(function() {
+                        new Block(cfg, atribs, e);
+                    });
+
+                //UC19(88-94)
+                var atribs = {
+                    'dia-type': 'rectangle', 
+                    'dia-pos': 'block4+n+30px' , 
+                    'dia-align': 'a1', 
+                    'dia-size': '30px:40px', 
+
+                };
+
+                var b = new Block(cfg, atribs, e);
+                assert.ok(b.type = 1);
+                assert.ok(b.relId = 'block4');
+                assert.ok(b.relPos = {x: 0, y: 1});
+                assert.ok(b.relDist = 30);
+                assert.ok(b.alignCur = 0.5);
+                assert.ok(b.alignRel = -0.5);
+                assert.ok(b.coords = {x: 100, y: 50});
+
+
+                //UC20(95-101)
+                var atribs = {
+                    'dia-type': 'rectangle', 
+                    'dia-pos': 'block4+n+30px' , 
+                    'dia-align': 'a1', 
+                    'dia-size': '30px:40px', 
+
+                };
+
+                var b = new Block(cfg, atribs, e);
+                assert.ok(b.type = 1);
+                assert.ok(b.relId = 'block4');
+                assert.ok(b.relPos = {x: -1, y: 0});
+                assert.ok(b.relDist = 30);
+                assert.ok(b.alignCur = 0.5);
+                assert.ok(b.alignRel = -0.5);
+                assert.ok(b.coords = {x: 100, y: 50});
+
+
+                //UC21(102-108)
+                var atribs = {
+                    'dia-type': 'rectangle', 
+                    'dia-pos': 'block4+n+30px' , 
+                    'dia-align': 'a1', 
+                    'dia-size': '30px:40px', 
+
+                };
+
+                var b = new Block(cfg, atribs, e);
+                assert.ok(b.type = 1);
+                assert.ok(b.relId = 'block4');
+                assert.ok(b.relPos = {x: 1, y: 0});
+                assert.ok(b.relDist = 30);
+                assert.ok(b.alignCur = 0.5);
+                assert.ok(b.alignRel = -0.5);
+                assert.ok(b.coords = {x: 100, y: 50});
+
+                //UC22(109-115)
+                var atribs = {
+                    'dia-type': 'rectangle', 
+                    'dia-pos': 'block4+n+30px' , 
+                    'dia-align': 'a1', 
+                    'dia-size': '30px:40px', 
+
+                };
+
+                var b = new Block(cfg, atribs, e);
+                assert.ok(b.type = 1);
+                assert.ok(b.relId = 'block4');
+                assert.ok(b.relPos = {x: -1, y: -1});
+                assert.ok(b.relDist = 30);
+                assert.ok(b.alignCur = 0.5);
+                assert.ok(b.alignRel = -0.5);
+                assert.ok(b.coords = {x: 100, y: 50});
+
+
+                //UC23(116-122)
+                var atribs = {
+                    'dia-type': 'rectangle', 
+                    'dia-pos': 'block4+n+30px' , 
+                    'dia-align': 'a1', 
+                    'dia-size': '30px:40px', 
+
+                };
+
+                var b = new Block(cfg, atribs, e);
+                assert.ok(b.type = 1);
+                assert.ok(b.relId = 'block4');
+                assert.ok(b.relPos = {x: 1, y: -1});
+                assert.ok(b.relDist = 30);
+                assert.ok(b.alignCur = 0.5);
+                assert.ok(b.alignRel = -0.5);
+                assert.ok(b.coords = {x: 100, y: 50});
+
+
+                //UC24(123-129)
+                var atribs = {
+                    'dia-type': 'rectangle', 
+                    'dia-pos': 'block4+n+30px' , 
+                    'dia-align': 'a1', 
+                    'dia-size': '30px:40px', 
+
+                };
+
+                var b = new Block(cfg, atribs, e);
+                assert.ok(b.type = 1);
+                assert.ok(b.relId = 'block4');
+                assert.ok(b.relPos = {x: -1, y: 1});
+                assert.ok(b.relDist = 30);
+                assert.ok(b.alignCur = 0.5);
+                assert.ok(b.alignRel = -0.5);
+                assert.ok(b.coords = {x: 100, y: 50});
+
+
+                //UC25(130-136)
+                var atribs = {
+                    'dia-type': 'rectangle', 
+                    'dia-pos': 'block4+n+30px' , 
+                    'dia-align': 'a1', 
+                    'dia-size': '30px:40px', 
+
+                };
+
+                var b = new Block(cfg, atribs, e);
+                assert.ok(b.type = 1);
+                assert.ok(b.relId = 'block4');
+                assert.ok(b.relPos = {x: 1, y: 1});
+                assert.ok(b.relDist = 30);
+                assert.ok(b.alignCur = 0.5);
+                assert.ok(b.alignRel = -0.5);
+                assert.ok(b.coords = {x: 100, y: 50});
+
+                //UC26(137)
+                var atribs = {
+                    'dia-type': 'rectangle', 
+                    'dia-pos': 'block4+n+30' , 
+                    'dia-align': 'a1', 
+                    'dia-size': '30px:40px', 
+
+                };
+
+                assert.throws(function() {
+                        new Block(cfg, atribs, e);
+                    });
+
+
+                //UC27(138)
+                var atribs = {
+                    'dia-type': 'rectangle', 
+                    'dia-pos': 'block4+n+0px' , 
+                    'dia-align': 'a1', 
+                    'dia-size': '30px:40px', 
+
+                };
+
+                assert.throws(function() {
+                        new Block(cfg, atribs, e);
+                    });
+
+
+                //UC28(139-145)
+                var atribs = {
+                    'dia-type': 'ellipse', 
+                    'dia-pos': 'block4+n+30px' , 
+                    'dia-align': 'a1', 
+                    'dia-size': '30px:40px', 
+
+                };
+
+                var b = new Block(cfg, atribs, e);
+                assert.ok(b.type = 2);
+                assert.ok(b.relId = 'block4');
+                assert.ok(b.relPos = {x: 0, y: -1});
+                assert.ok(b.relDist = 30);
+                assert.ok(b.alignCur = 0.5);
+                assert.ok(b.alignRel = -0.5);
+                assert.ok(b.coords = {x: 100, y: 50});
+            });
+
+        QUnit.test("Line", function(assert) {
+                var e = document.createElement('div')
+                //UD1(1-13)
+                var atribs = {
+                    'dia-line-start': 'block1+n+rhombus',
+                    'dia-line-end': 'block2+n+rhombus', 
+                    'dia-direction': 'hor', 
+                    'dia-text-pos': 'start',
+                    'dia-line-style': '1px solid red'
+                };
+
+                var b = new Line(atribs, e);
+                assert.ok(b.elem = 'null');
+                assert.ok(b.domId = 'undefined');
+                assert.ok(b.type = '0');
+                assert.ok(b.startBlockId ='block1');
+                assert.ok(b.startBlockPos = {'x': 0, 'y': -1});
+                assert.ok(b.startBlockShape = 2);
+                assert.ok(b.endBlockId = 'block2');
+                assert.ok(b.endBlockPos = {'x': 0, 'y': -1});
+                assert.ok(b.endBlockShape = 2);
+                assert.ok(b.capDir = '0');
+                assert.ok(b.capPos = '0');
+                assert.ok(b.lineStyle = '0');
+                assert.ok(b.lineColor = 'red');
+
+                //UD2(14-26)
+                var atribs = {
+                    'dia-line-start': 'block1+n+rhombus',
+                    'dia-line-end': 'block2+n+rhombus', 
+                    'dia-direction': 'hor', 
+                    'dia-text-pos': 'start',
+                    //   'dia-line-style': 'solid red'
+                };
+
+                var b = new Line(atribs, e);
+                assert.ok(b.elem = 'null');
+                assert.ok(b.domId = 'undefined');
+                assert.ok(b.type = '0');
+                assert.ok(b.startBlockId ='block1');
+                assert.ok(b.startBlockPos = {'x': 0, 'y': -1});
+                assert.ok(b.startBlockShape = 2);
+                assert.ok(b.endBlockId = 'block2');
+                assert.ok(b.endBlockPos = {'x': 0, 'y': -1});
+                assert.ok(b.endBlockShape = 2);
+                assert.ok(b.capDir = '0');
+                assert.ok(b.capPos = '0');
+                assert.ok(b.lineStyle = 1);
+                assert.ok(b.lineColor = 'red');    
+
+
+                //UD3(27-39)
+                var atribs = {
+                    'dia-line-start': 'block1+n+rhombus',
+                    'dia-line-end': 'block2+n+rhombus', 
+                    'dia-direction': 'hor', 
+                    'dia-text-pos': 'start',
+                    'dia-line-style': '1px solid red'
+                };
+
+                var b = new Line(atribs, e);
+                assert.ok(b.elem = 'null');
+                assert.ok(b.domId = 'undefined');
+                assert.ok(b.type = '0');
+                assert.ok(b.startBlockId ='block1');
+                assert.ok(b.startBlockPos = {'x': 0, 'y': -1});
+                assert.ok(b.startBlockShape = 2);
+                assert.ok(b.endBlockId = 'block2');
+                assert.ok(b.endBlockPos = {'x': 0, 'y': -1});
+                assert.ok(b.endBlockShape = 2);
+                assert.ok(b.capDir = '0');
+                assert.ok(b.capPos = '0');
+                assert.ok(b.lineStyle = 2);
+                assert.ok(b.lineColor = 'red');
+
+                //UD4(40-52)
+                var atribs = {
+                    'dia-line-start': 'block1+n+rhombus',
+                    'dia-line-end': 'block2+n+rhombus', 
+                    'dia-direction': 'hor', 
+                    'dia-text-pos': 'start',
+                    'dia-line-style': '1px solid red'
+                };
+
+                var b = new Line(atribs, e);
+                assert.ok(b.elem = 'null');
+                assert.ok(b.domId = 'undefined');
+                assert.ok(b.type = '0');
+                assert.ok(b.startBlockId ='block1');
+                assert.ok(b.startBlockPos = {'x': 0, 'y': -1});
+                assert.ok(b.startBlockShape = 2);
+                assert.ok(b.endBlockId = 'block2');
+                assert.ok(b.endBlockPos = {'x': 0, 'y': -1});
+                assert.ok(b.endBlockShape = 2);
+                assert.ok(b.capDir = '0');
+                assert.ok(b.capPos = 1);
+                assert.ok(b.lineStyle = '0');
+                assert.ok(b.lineColor = 'red');
+
+
+
+                //UD5(53-65)
+                var atribs = {
+                    'dia-line-start': 'block1+n+rhombus',
+                    'dia-line-end': 'block2+n+rhombus', 
+                    'dia-direction': 'hor', 
+                    'dia-text-pos': 'start',
+                    'dia-line-style': '1px solid red'
+                };
+
+                var b = new Line(atribs, e);
+                assert.ok(b.elem = 'null');
+                assert.ok(b.domId = 'undefined');
+                assert.ok(b.type = '0');
+                assert.ok(b.startBlockId ='block1');
+                assert.ok(b.startBlockPos = {'x': 0, 'y': -1});
+                assert.ok(b.startBlockShape = 2);
+                assert.ok(b.endBlockId = 'block2');
+                assert.ok(b.endBlockPos = {'x': 0, 'y': -1});
+                assert.ok(b.endBlockShape = 2);
+                assert.ok(b.capDir = '0');
+                assert.ok(b.capPos = 2);
+                assert.ok(b.lineStyle = '0');
+                assert.ok(b.lineColor = 'red');
+
+                //UD6(66-78)
+                var atribs = {
+                    'dia-line-start': 'block1+n+rhombus',
+                    'dia-line-end': 'block2+n+rhombus', 
+                    'dia-direction': 'hor', 
+                    'dia-text-pos': 'start',
+                    'dia-line-style': '1px solid red'
+                };
+
+                var b = new Line(atribs, e);
+                assert.ok(b.elem = 'null');
+                assert.ok(b.domId = 'undefined');
+                assert.ok(b.type = '0');
+                assert.ok(b.startBlockId ='block1');
+                assert.ok(b.startBlockPos = {'x': 0, 'y': -1});
+                assert.ok(b.startBlockShape = 2);
+                assert.ok(b.endBlockId = 'block2');
+                assert.ok(b.endBlockPos = {'x': 0, 'y': -1});
+                assert.ok(b.endBlockShape = 4);
+                assert.ok(b.capDir = 1);
+                assert.ok(b.capPos = '0');
+                assert.ok(b.lineStyle = '0');
+                assert.ok(b.lineColor = 'red');
+
+                //UD7(79-91)
+                var atribs = {
+                    'dia-line-start': 'block1+n+rhombus',
+                    'dia-line-end': 'block2+n+rhombus', 
+                    'dia-direction': 'hor', 
+                    'dia-text-pos': 'start',
+                    'dia-line-style': '1px solid red'
+                };
+
+                var b = new Line(atribs, e);
+                assert.ok(b.elem = 'null');
+                assert.ok(b.domId = 'undefined');
+                assert.ok(b.type = '0');
+                assert.ok(b.startBlockId ='block1');
+                assert.ok(b.startBlockPos = {'x': 0, 'y': -1});
+                assert.ok(b.startBlockShape = 2);
+                assert.ok(b.endBlockId = 'block2');
+                assert.ok(b.endBlockPos = {'x': 0, 'y': -1});
+                assert.ok(b.endBlockShape = 4);
+                assert.ok(b.capDir = '0');
+                assert.ok(b.capPos = '0');
+                assert.ok(b.lineStyle = '0');
+                assert.ok(b.lineColor = 'red');
+
+                //UD8(91-104)
+                var atribs = {
+                    'dia-line-start': 'block1+n+rhombus',
+                    'dia-line-end': 'block2+n+rhombus', 
+                    'dia-direction': 'hor', 
+                    'dia-text-pos': 'start',
+                    'dia-line-style': '1px solid red'
+                };
+
+                var b = new Line(atribs, e);
+                assert.ok(b.elem = 'null');
+                assert.ok(b.domId = 'undefined');
+                assert.ok(b.type = '0');
+                assert.ok(b.startBlockId ='block1');
+                assert.ok(b.startBlockPos = {'x': 0, 'y': -1});
+                assert.ok(b.startBlockShape = 2);
+                assert.ok(b.endBlockId = 'block2');
+                assert.ok(b.endBlockPos = {'x': 0, 'y': -1});
+                assert.ok(b.endBlockShape = 3);
+                assert.ok(b.capDir = '0');
+                assert.ok(b.capPos = '0');
+                assert.ok(b.lineStyle = '0');
+                assert.ok(b.lineColor = 'red');
+
+                //UD9(105-117)
+                var atribs = {
+                    'dia-line-start': 'block1+n+rhombus',
+                    'dia-line-end': 'block2+n+rhombus', 
+                    'dia-direction': 'hor', 
+                    'dia-text-pos': 'start',
+                    'dia-line-style': '1px solid red'
+                };
+
+                var b = new Line(atribs, e);
+                assert.ok(b.elem = 'null');
+                assert.ok(b.domId = 'undefined');
+                assert.ok(b.type = '0');
+                assert.ok(b.startBlockId ='block1');
+                assert.ok(b.startBlockPos = {'x': 0, 'y': -1});
+                assert.ok(b.startBlockShape = 2);
+                assert.ok(b.endBlockId = 'block2');
+                assert.ok(b.endBlockPos = {'x': 0, 'y': -1});
+                assert.ok(b.endBlockShape = 1);
+                assert.ok(b.capDir = '0');
+                assert.ok(b.capPos = '0');
+                assert.ok(b.lineStyle = '0');
+                assert.ok(b.lineColor = 'red');
+
+                //UD10(118-130)
+                var atribs = {
+                    'dia-line-start': 'block1+n+rhombus',
+                    'dia-line-end': 'block2+n+rhombus', 
+                    'dia-direction': 'hor', 
+                    'dia-text-pos': 'start',
+                    'dia-line-style': '1px solid red'
+                };
+
+                var b = new Line(atribs, e);
+                assert.ok(b.elem = 'null');
+                assert.ok(b.domId = 'undefined');
+                assert.ok(b.type = '0');
+                assert.ok(b.startBlockId ='block1');
+                assert.ok(b.startBlockPos = {'x': 0, 'y': -1});
+                assert.ok(b.startBlockShape = 2);
+                assert.ok(b.endBlockId = 'block2');
+                assert.ok(b.endBlockPos = {'x': 0, 'y': -1});
+                assert.ok(b.endBlockShape = '0');
+                assert.ok(b.capDir = '0');
+                assert.ok(b.capPos = '0');
+                assert.ok(b.lineStyle = '0');
+                assert.ok(b.lineColor = 'red');
+
+                //UD11(131-143)
+                var atribs = {
+                    'dia-line-start': 'block1+n+rhombus',
+                    'dia-line-end': 'block2+n+rhombus', 
+                    'dia-direction': 'hor', 
+                    'dia-text-pos': 'start',
+                    'dia-line-style': '1px solid red'
+                };
+
+                var b = new Line(atribs, e);
+                assert.ok(b.elem = 'null');
+                assert.ok(b.domId = 'undefined');
+                assert.ok(b.type = '0');
+                assert.ok(b.startBlockId ='block1');
+                assert.ok(b.startBlockPos = {'x': 0, 'y': -1});
+                assert.ok(b.startBlockShape = 2);
+                assert.ok(b.endBlockId = 'block2');
+                assert.ok(b.endBlockPos = {'x': 0, 'y': 1});
+                assert.ok(b.endBlockShape = 2);
+                assert.ok(b.capDir = '0');
+                assert.ok(b.capPos = '0');
+                assert.ok(b.lineStyle = '0');
+                assert.ok(b.lineColor = 'red');
+
+
+                //UD12(144-156)
+                var atribs = {
+                    'dia-line-start': 'block1+n+rhombus',
+                    'dia-line-end': 'block2+n+rhombus', 
+                    'dia-direction': 'hor', 
+                    'dia-text-pos': 'start',
+                    'dia-line-style': '1px solid red'
+                };
+
+                var b = new Line(atribs, e);
+                assert.ok(b.elem = 'null');
+                assert.ok(b.domId = 'undefined');
+                assert.ok(b.type = '0');
+                assert.ok(b.startBlockId ='block1');
+                assert.ok(b.startBlockPos = {'x': 0, 'y': -1});
+                assert.ok(b.startBlockShape = 2);
+                assert.ok(b.endBlockId = 'block2');
+                assert.ok(b.endBlockPos = {'x': -1, 'y': 0});
+                assert.ok(b.endBlockShape = 2);
+                assert.ok(b.capDir = '0');
+                assert.ok(b.capPos = '0');
+                assert.ok(b.lineStyle = '0');
+                assert.ok(b.lineColor = 'red');
+
+
+                //UD13(157-169)
+                var atribs = {
+                    'dia-line-start': 'block1+n+rhombus',
+                    'dia-line-end': 'block2+n+rhombus', 
+                    'dia-direction': 'hor', 
+                    'dia-text-pos': 'start',
+                    'dia-line-style': '1px solid red'
+                };
+
+                var b = new Line(atribs, e);
+                assert.ok(b.elem = 'null');
+                assert.ok(b.domId = 'undefined');
+                assert.ok(b.type = '0');
+                assert.ok(b.startBlockId ='block1');
+                assert.ok(b.startBlockPos = {'x': 0, 'y': -1});
+                assert.ok(b.startBlockShape = 2);
+                assert.ok(b.endBlockId = 'block2');
+                assert.ok(b.endBlockPos = {'x': 1, 'y': 0});
+                assert.ok(b.endBlockShape = 2);
+                assert.ok(b.capDir = '0');
+                assert.ok(b.capPos = '0');
+                assert.ok(b.lineStyle = '0');
+                assert.ok(b.lineColor = 'red');
+
+
+                //UD14(170-182)
+                var atribs = {
+                    'dia-line-start': 'block1+n+rhombus',
+                    'dia-line-end': 'block2+n+rhombus', 
+                    'dia-direction': 'hor', 
+                    'dia-text-pos': 'start',
+                    'dia-line-style': '1px solid red'
+                };
+
+                var b = new Line(atribs, e);
+                assert.ok(b.elem = 'null');
+                assert.ok(b.domId = 'undefined');
+                assert.ok(b.type = '0');
+                assert.ok(b.startBlockId ='block1');
+                assert.ok(b.startBlockPos = {'x': 0, 'y': -1});
+                assert.ok(b.startBlockShape = 2);
+                assert.ok(b.endBlockId = 'block2');
+                assert.ok(b.endBlockPos = {'x': -1, 'y': -1});
+                assert.ok(b.endBlockShape = 2);
+                assert.ok(b.capDir = '0');
+                assert.ok(b.capPos = '0');
+                assert.ok(b.lineStyle = '0');
+                assert.ok(b.lineColor = 'red');
+
+                //UD15(183-195)
+                var atribs = {
+                    'dia-line-start': 'block1+n+rhombus',
+                    'dia-line-end': 'block2+n+rhombus', 
+                    'dia-direction': 'hor', 
+                    'dia-text-pos': 'start',
+                    'dia-line-style': '1px solid red'
+                };
+
+                var b = new Line(atribs, e);
+                assert.ok(b.elem = 'null');
+                assert.ok(b.domId = 'undefined');
+                assert.ok(b.type = '0');
+                assert.ok(b.startBlockId ='block1');
+                assert.ok(b.startBlockPos = {'x': 0, 'y': -1});
+                assert.ok(b.startBlockShape = 2);
+                assert.ok(b.endBlockId = 'block2');
+                assert.ok(b.endBlockPos = {'x': 1, 'y': -1});
+                assert.ok(b.endBlockShape = 2);
+                assert.ok(b.capDir = '0');
+                assert.ok(b.capPos = '0');
+                assert.ok(b.lineStyle = '0');
+                assert.ok(b.lineColor = 'red');
+
+                //UD16(196-208)
+                var atribs = {
+                    'dia-line-start': 'block1+n+rhombus',
+                    'dia-line-end': 'block2+n+rhombus', 
+                    'dia-direction': 'hor', 
+                    'dia-text-pos': 'start',
+                    'dia-line-style': '1px solid red'
+                };
+
+                var b = new Line(atribs, e);
+                assert.ok(b.elem = 'null');
+                assert.ok(b.domId = 'undefined');
+                assert.ok(b.type = '0');
+                assert.ok(b.startBlockId ='block1');
+                assert.ok(b.startBlockPos = {'x': 0, 'y': -1});
+                assert.ok(b.startBlockShape = 2);
+                assert.ok(b.endBlockId = 'block2');
+                assert.ok(b.endBlockPos = {'x': -1, 'y': 1});
+                assert.ok(b.endBlockShape = 2);
+                assert.ok(b.capDir = '0');
+                assert.ok(b.capPos = '0');
+                assert.ok(b.lineStyle = '0');
+                assert.ok(b.lineColor = 'red');
+
+                //UD17(209-221)
+                var atribs = {
+                    'dia-line-start': 'block1+n+rhombus',
+                    'dia-line-end': 'block2+n+rhombus', 
+                    'dia-direction': 'hor', 
+                    'dia-text-pos': 'start',
+                    'dia-line-style': '1px solid red'
+                };
+
+                var b = new Line(atribs, e);
+                assert.ok(b.elem = 'null');
+                assert.ok(b.domId = 'undefined');
+                assert.ok(b.type = '0');
+                assert.ok(b.startBlockId ='block1');
+                assert.ok(b.startBlockPos = {'x': 0, 'y': -1});
+                assert.ok(b.startBlockShape = 2);
+                assert.ok(b.endBlockId = 'block2');
+                assert.ok(b.endBlockPos = {'x': 1, 'y': 1});
+                assert.ok(b.endBlockShape = 2);
+                assert.ok(b.capDir = '0');
+                assert.ok(b.capPos = '0');
+                assert.ok(b.lineStyle = '0');
+                assert.ok(b.lineColor = 'red');
+
+                //UD18(222)
+                var atribs = {
+                    'dia-line-start': 'block1+n+rhombus',
+                    'dia-line-end': 'block2', 
+                    'dia-direction': 'hor', 
+                    'dia-text-pos': 'start',
+                };
+
+                assert.throws(function() {
+                        new Line(atribs, e);
+                    });
+
+
+
+                //UD19(223)
+                var atribs = {
+                    'dia-line-start': 'block1+n+rhombus',
+                    'dia-line-end': 'block2+nn+rhombus', 
+                    'dia-direction': 'hor', 
+                    'dia-text-pos': 'start',
+                };
+
+                assert.throws(function() {
+                        new Line(atribs, e);
+                    });
+
+
+                //UD20(224)
+                var atribs = {
+                    'dia-line-start': 'block1+n+rhombus',
+                    'dia-line-end': 'block2+n+ololo', 
+                    'dia-direction': 'hor', 
+                    'dia-text-pos': 'start',
+                };
+
+                assert.throws(function() {
+                        new Line(atribs, e);
+                    });
+
+                //UD21(225)
+                var atribs = {
+                    'dia-line-start': 'block1+n+rhombus',
+                    'dia-line-end': 'block2+n+rhombus', 
+                    'dia-direction': 'horver', 
+                    'dia-text-pos': 'start',
+                };
+
+                assert.throws(function() {
+                        new Line(atribs, e);
+                    });
+
+                //UD22(226)
+                var atribs = {
+                    'dia-line-start': 'block1+n+rhombus',
+                    'dia-line-end': 'block2+n+rhombus', 
+                    'dia-direction': 'hor', 
+                    'dia-text-pos': 'start',
+                    'dia-line-style': 'any red'
+                };
+
+                assert.throws(function() {
+                        new Line(atribs, e);
+                    });
+
+
+                //UD23(227-239)
+                var atribs = {
+                    'dia-line-start': 'block1+n',
+                    'dia-line-end': 'block2+n', 
+
+                };
+
+                var b = new Line(atribs, e);
+                assert.ok(b.elem = 'null');
+                assert.ok(b.domId = 'undefined');
+                assert.ok(b.type = '0');
+                assert.ok(b.startBlockId ='block1');
+                assert.ok(b.startBlockPos = {'x': 0, 'y': -1});
+                assert.ok(b.startBlockShape = '0');
+                assert.ok(b.endBlockId = 'block2');
+                assert.ok(b.endBlockPos = {'x': 0, 'y': -1});
+                assert.ok(b.endBlockShape = 2);
+                assert.ok(b.capDir = '0');
+                assert.ok(b.capPos = 1);
+                assert.ok(b.lineStyle = '0');
+                assert.ok(b.lineColor = 'black');
+
+
+                //UD24(240)
+                var atribs = {
+                    'dia-line-start': 'block1',
+                    'dia-line-end': 'block2+n+rhombus', 
+                    'dia-direction': 'hor', 
+                    'dia-text-pos': 'start',
+                };
+
+                assert.throws(function() {
+                        new Line(atribs, e);
+                    });
+                //UD25(241)
+                var atribs = {
+                    'dia-line-start': 'block1+nn+rhombus',
+                    'dia-line-end': 'block2+n+rhombus', 
+                    'dia-direction': 'hor', 
+                    'dia-text-pos': 'start',
+                };
+
+                assert.throws(function() {
+                        new Line(atribs, e);
+                    });
+
+                //UD26(242)
+                var atribs = {
+                    'dia-line-start': 'block1+n+ololo',
+                    'dia-line-end': 'block2+n+rhombus', 
+                    'dia-direction': 'hor', 
+                    'dia-text-pos': 'start',
+                    'dia-line-style': '1px solid red'
+                };
+
+                assert.throws(function() {
+                        new Line(atribs, e);
+                    });
+            });
+
+        QUnit.test("rectSize_", function(assert) {
+                var cfg = {gridSize: 10};
+
+                getTextSize_ = function() { return new Size(100, 40); };
+                var block = {prop: 1.25};
+                var s = rectSize_(block);
+
+                assert.equal(s.w, 100);
+                assert.equal(s.h, 80);
+
+                getTextSize_ = function() { return new Size(100, 40); };
+                var block = {minSize: {w: 200, h: 50}};
+                var s = rectSize_(block);
+
+                assert.equal(s.w, 200);
+                assert.equal(s.h, 50);
+
+                getTextSize_ = function() { return new Size(100, 40); };
+                var block = {};
+                var s = rectSize_(block);
+
+                assert.equal(s.w, 100);
+                assert.equal(s.h, 40);
+
+                getTextSize_ = function() { return new Size(100, 40); };
+                var block = {minSize: {w: 80, h:40}};
+                var s = rectSize_(block);
+
+                assert.equal(s.w, 100);
+                
+                assert.equal(s.h, 50);
+
+                getTextSize_ = function() { return new Size(100, 40); };
+                var block = {minSize: {w: 200, h: 20}};
+                var s = rectSize_(block);
+
+                assert.equal(s.w, 400);
+                assert.equal(s.h, 40);
+
+                getTextSize_ = function() { return new Size(20, 40); };
+                var block = {minSize: {w: 200, h: 20}};
+                var s = rectSize_(block);
+                
+                assert.equal(s.w, 400);
+                assert.equal(s.h, 40);
+
+                getTextSize_ = function() { return new Size(200, 20); };
+                var block = {minSize: {w: 20, h: 40}};
+                var s = rectSize_(block);
+
+                assert.equal(s.w, 200);
+                assert.equal(s.h, 400);
+
+                getTextSize_ = function() { return new Size(20, 40); };
+                var block = {prop: 1.25};
+                var s = rectSize_(block);
+                
+                assert.equal(s.w, 50);
+                assert.equal(s.h, 40);
+
+                getTextSize_ = function() { return new Size(200, 20); };
+                var block = {prop: 0.5};
+                var s = rectSize_(block);
+                
+                assert.equal(s.w, 200);
+                assert.equal(s.h, 400);
+
+                getTextSize_ = function() { return new Size(200, 20); };
+                var block = {prop: 10};
+                var s = rectSize_(block);
+                
+                assert.equal(s.w, 200);
+                assert.equal(s.h, 20);
+             
+            });
+
+        QUnit.test("ellipseSize", function(assert) {
+                var cfg = {gridSize: 10};
+
+                getTextSize_ = function() { return new Size(100, 40); };
+                var block = {prop: 1.25};
+                var s = rectSize_(block);
+
+                assert.equal(s.w, 100);
+                assert.equal(s.h, 80);
+
+                getTextSize_ = function() { return new Size(100, 40); };
+                var block = {minSize: {w: 200, h: 60}};
+                var s = rectSize_(block);
+
+                assert.equal(s.w, 200);
+                assert.equal(s.h, 60);
+
+                getTextSize_ = function() { return new Size(100, 40); };
+                var block = {block: 3};
+                var s = rectSize_(block);
+
+                assert.equal(s.w, 100);
+                assert.equal(s.h, 40);
+            });
+
+
+
+        QUnit.test("ellipseSize", function(assert) {
+                var cfg = {gridSize: 10};
+
+                getTextSize_ = function() { return new Size(100, 40); };
+                var block = {prop: 1.25};
+                var s = rectSize_(block);
+
+                assert.equal(s.w, 100);
+                assert.equal(s.h, 80);
+
+                getTextSize_ = function() { return new Size(100, 40); };
+                var block = {minSize: {w: 200, h: 60}}; var s = rectSize_(block);
+
+                assert.equal(s.w, 200);
+                assert.equal(s.h, 60);
+
+                getTextSize_ = function() { return new Size(100, 40); };
+                var block = {block: 3};
+                var s = rectSize_(block);
+
+                assert.equal(s.w, 100);
+                assert.equal(s.h, 40);
+            });
+
+        QUnit.test("blocksRelPos_", function(assert) {
+                var cfg = {gridSize: 10};
+
+                var blocks = [
+                    {id: 0, size: {w: 30, h:20}},
+                    {id: 1, relId: 0, size: {w: 20, h:20}, relDist: 10, relPos: {x: 0, y: -1}, alignCur: -0.5, alignRel: -0.5}, 
+                    {id: 2, relId: 0, size: {w: 10, h:10}, relDist: 10, relPos: {x: 0, y: 1}, alignCur: 0, alignRel: 0}
+                ];
+
+                blocksRelPos_(cfg, blocks);
+                assert.deepEqual(blocks[0].coords, new Point(0, 0));
+                assert.deepEqual(blocks[1].coords, new Point(-25, -30));
+                assert.deepEqual(blocks[2].coords, new Point(0, 25));
+            });
+
+        QUnit.test("blocksAbsPos_", function(assert) {
+                var cfg = {gridSize: 10};
+
+                var blocks = [
+                    {size: {w: 10, h:10}, coords: {x: -20, y: -30}},
+                    {size: {w: 10, h:10}, coords: {x: 0, y: 0}}, 
+                    {size: {w: 10, h:10}, coords: {x: 30, y: 60}},
+                ];
+
+                blocksAbsPos_(cfg, blocks);
+                assert.deepEqual(blocks[0].coords, {x:25, y:25});
+                assert.deepEqual(blocks[1].coords, {x:45, y:55});
+                assert.deepEqual(blocks[2].coords, {x:75, y:115});
+            });
+
+        QUnit.test("fillGrid_", function(assert) {
+                var blocks = [
+                    {size: {w: 60, h: 80}, coords: {x: 70, y: 80}},
+                    {size: {w: 20, h: 80}, coords: {x: 160, y: 110}},
+                ];
+
+                var cfg = {gridSize: 20, imgSize: new Size(220, 180)};
+                var grid = new Grid(cfg, blocks);
+
+                fillGrid_(grid, blocks);
+
+                var g = [
+                    [ false, false, false, false, false, false, false, false, false, false, false, false ],
+                    [ false, true,  true,  true,  true,  true,  true,  true,  true,  true,  true,  false ],
+                    [ false, true,  false, false, false, false, true,  true,  true,  true,  true,  false ],
+                    [ false, true,  false, false, false, false, true,  true,  true,  true,  true,  false ],
+                    [ false, true,  false, false, false, false, true,  true,  false, true,  true,  false ],
+                    [ false, true,  false, false, false, false, true,  true,  false, true,  true,  false ],
+                    [ false, true,  false, false, false, false, true,  true,  false, true,  true,  false ],
+                    [ false, true,  true,  true,  true,  true,  true,  true,  false, true,  true,  false ],
+                    [ false, true,  true,  true,  true,  true,  true,  true,  true,  true,  true,  false ],
+                    [ false, false, false, false, false, false, false, false, false, false, false, false ],
+                ];
+
+                assert.deepEqual(grid.g, g);
+            });
+
+
+        QUnit.test("bfs_", function(assert) {
+                var blocks = [
+                    {size: {w: 60, h: 80}, coords: {x: 70, y: 80}},
+                    {size: {w: 20, h: 80}, coords: {x: 160, y: 110}},
+                ];
+
+                var cfg = {gridSize: 20, imgSize: new Size(220, 180)};
+                var grid = new Grid(cfg, blocks);
+
+                fillGrid_(grid, blocks);
+
+                var path = bfs_(grid, new Point(2,4), new Point(8,8));
+
+
+                var exp = new Array();
+                exp[104] = 103;
+                exp[103] = 91;
+                exp[91] = 90;
+                exp[90] = 89;
+                exp[89] = 88;
+                exp[88] = 87;
+                exp[87] = 86;
+                exp[86] = 85;
+                exp[85] = 73;
+                exp[73] = 61;
+                exp[61] = 49;
+                exp[49] = 50;
+                exp[50] = 50;
+
+                for (var i = 0; i < exp.length; i++) {
+                    if (exp[i] == null)
+                        continue;
+
+                    assert.deepEqual(path[i], exp[i]);
+                };
+
+                var path = bfs_(grid, new Point(2, 6), new Point(4, 3));
+                assert.equal(path, null);
+            });
+
+        QUnit.test("restorePath_", function(assert) {
+                var blocks = [
+                    {size: {w: 60, h: 80}, coords: {x: 70, y: 80}},
+                    {size: {w: 20, h: 80}, coords: {x: 160, y: 110}},
+                ];
+
+                var cfg = {gridSize: 20, imgSize: new Size(220, 180)};
+                var grid = new Grid(cfg, blocks);
+
+                fillGrid_(grid, blocks);
+                var st = new Point(2,4);
+                var en = new Point(8,8);
+                var p = bfs_(grid, st, en);
+
+                var path = restorePath_(grid, p, st, en);
+
+                var exp = [
+                    {x: 40, y: 80},
+                    {x: 20, y: 80},
+                    {x: 20, y: 140},
+                    {x: 140, y: 140},
+                    {x: 140, y: 160},
+                    {x: 160, y: 160},
+                ];
+
+                for (var i = 0; i < exp.length; i++) {
+                    if (exp[i] == null)
+                        continue;
+
+                    assert.deepEqual(path[i].x, exp[i].x);
+                    assert.deepEqual(path[i].y, exp[i].y);
+                };
+            });
+
+        QUnit.test("draw", function(assert) {
+                assert.throws(function(){
+                        draw('asda');
+
+                    });
+
+            });
+
         return pub;
-}());
+    }());
