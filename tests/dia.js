@@ -1597,6 +1597,14 @@ var dia = (function() {
         QUnit.test("getType_", function(assert) {
                 var ret = getType_({'dia-pos': '12'});
                 assert.ok(ret == Type.rect);
+
+                assert.throws(function(){
+                        getType_({'dia-line-start': '1'});
+                    });
+
+                var ret = getType_({'dia-line-start': '1', 'dia-line-end': '2'});
+                assert.ok(ret == Type.line);
+
             });
 
         QUnit.test("rectSize_", function( assert ) {
@@ -1934,7 +1942,6 @@ var dia = (function() {
                     'dia-pos': 'block4+n+30px' , 
                     'dia-align': 'a11', 
                     'dia-size': '30px:40px', 
-
                 };
 
                 assert.throws(function() {
@@ -2936,7 +2943,118 @@ var dia = (function() {
                         draw('asda');
 
                     });
+            });
 
+        QUnit.test("checkIdScope_", function(assert) {
+                var blocks = [{domId: 'bl1'}, {domId: 'bl2', relId: 'bl1'}]; 
+                var lines = [{startBlockId: 'bl1', endBlockId: 'bl2'}];
+
+                var epB = [{domId:'bl1', id: 0}, {domId: 'bl2', id: 1, relId: 0}];
+                var epL = [{startBlockId: 0, endBlockId: 1}];
+
+                checkIdScope_(blocks, lines);
+                assert.deepEqual(blocks, epB);
+                assert.deepEqual(lines, epL);
+
+                var blocks = [{id: 'bl1'}, {id: 'bl2', relId: 'bl3'}];
+                assert.throws(function(){
+                        checkIdScope_(blocks, []);
+                    });
+            });
+
+        QUnit.test("checkOverlaps_", function(assert) {
+                var cfg = {gridSize: 10};
+                //1
+                var blocks = [
+                    {id: 0, coords: {x: 100, y: 100}, size: {w: 50, h: 50}, domId: 'block1'}
+                ];
+
+                try {
+                    checkOverlaps_(cfg, blocks);
+                } catch (e) {
+                    assert.ok(1 == 0);
+                }
+                //2
+                var blocks = [
+                    {id: 0, coords: {x: 50,  y: 50},  size: {w: 30, h: 20}, domId: 'block1'},
+                    {id: 1, coords: {x: 200, y: 200}, size: {w: 60, h: 20}, domId: 'block2'},
+                ];
+
+                try {
+                    checkOverlaps_(cfg, blocks);
+                } catch (e) {
+                    assert.ok(1 == 0);
+                }
+                //3
+                var blocks = [
+                    {id: 0, coords: {x: 100, y: 100}, size: {w: 50, h: 50}, domId: 'block1'},
+                    {id: 1, coords: {x: 100, y: 100}, size: {w: 50, h: 50}, domId: 'block2'},
+                ];
+                assert.throws(function() {
+                        checkOverlaps_(cfg, blocks);
+                    });
+                //4
+                var blocks = [
+                    {id: 0,  coords: {x: 200, y: 200}, size: {w: 100, h: 100}, domId: 'block1'},
+                    {id: 1,  coords: {x: 400, y: 200}, size: {w: 100, h: 100}, domId: 'block2'},
+                ];
+                assert.throws(function() {
+                        checkOverlaps_(cfg, blocks);
+                    });
+
+                //5
+                var blocks = [
+                    {id: 0,  coords: {x: 100, y: 100}, size: {w: 50, h: 50}, domId: 'block1'},
+                    {id: 1,  coords: {x: 125, y: 300}, size: {w: 50, h: 50}, domId: 'block2'},
+                ];
+
+                try {
+                    checkOverlaps_(cfg, blocks);
+                } catch (e) {
+                    assert.ok(1 == 0);
+                }
+                //6
+                var blocks = [
+                    {id: 0,  coords: {x: 100}, size: {w: 50, h: 50}, domId: 'block1'},
+                    {id: 1,  coords: {x: 125, y: 300}, size: {w: 50, h: 50}, domId: 'block2'},
+                ];
+
+                try {
+                    checkOverlaps_(cfg, blocks);
+                } catch (e) {
+                    assert.ok(1 == 0);
+                }
+                //7(3)
+                var blocks = [
+                    {id: 0,  coords: {x: 100, y: 100}, domId: 'block1'},
+                    {id: 1,  coords: {x: 200, y: 300}, size: {w: 50, h: 50}, domId: 'block2'},
+                ];
+
+                try {
+                    checkOverlaps_(cfg, blocks);
+                } catch (e) {
+                    assert.ok(1 == 1);
+                }
+                //8(4)
+                var blocks = [
+                    {id: 0},
+                    {id: 1,  coords: {x: 200, y: 300}, size: {w: 50, h: 50}, domId: 'block2'},
+                ];
+
+                try {
+                    checkOverlaps_(cfg, blocks);
+                } catch (e) {
+                    assert.ok(1 == 1);
+                }
+
+                //9
+                var blocks = [
+                    {id: 0,  coords: {x: 100, y: 100}, size: {w: 50, h: 50}, domId: 'block1'},
+                    {id: 1,  coords: {x: 115, y: 110}, size: {w: 50, h: 50}, domId: 'block2'},
+                ];
+                assert.throws(function() {
+                        checkOverlaps_(cfg, blocks);
+                    });
             });
 
         return pub;
