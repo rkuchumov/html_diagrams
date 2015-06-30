@@ -416,8 +416,6 @@ var dia = (function() {
             }
 
             if ('dia-coords' in attribs) {
-                throw 'Absolute positioning is not impemented yet';
-
                 var a = attribs['dia-coords'].split(':');
 
                 if (a.length != 2)
@@ -427,7 +425,7 @@ var dia = (function() {
                 var y = parseInt(a[1]);
 
                 if (a[0].substr(-2) == 'px' && a[1].substr(-2) == 'px'
-                    && x > 0 && y > 0) 
+                    && x >= 0 && y >= 0) 
                 {
                     this.coords = new Point(x, y);
                 } else {
@@ -739,40 +737,13 @@ var dia = (function() {
             }
         }
 
-        /** Caclulates blocks positions relative to the first block in array
-         * or to the block without 'dia-pos' attribute.
-         */
         function blocksRelPos_(cfg, blocks) {
             console.assert(blocks instanceof Array, 
                 'Incorrect function arguments');
             console.assert(cfg instanceof Config, 
                 'Incorrect function arguments');
 
-            for (var i = 0; i < blocks.length; i++) {
-                console.assert(blocks[i] instanceof Block, 
-                    'Incorrect function arguments');
-                console.assert(blocks[i].size instanceof Size, 
-                    'Block size is not set');
-
-                if (blocks[i].relId !== undefined)
-                    continue;
-
-                var t = blocks[0];
-                blocks[0] = blocks[i];
-                blocks[i] = t;
-                break;
-            } 
-
-            blocks[0].coords = new Point(0, 0);
-
-            for (var i = 0; i < blocks.length; i++) { 
-                for (var j = 0; j < blocks.length; j++) { 
-                    // pivot or block with abs position
-                    if (blocks[j].relId == undefined) 
-                        continue;
-                    if (blocks[j].relId != blocks[i].id)
-                        continue;
-
+            function calcPos(j, i) {
                     //Координаты блока j = 
                     //     коорд i
                     //     + расстояние между центрами по одной из компонент
@@ -793,8 +764,42 @@ var dia = (function() {
                         * (1 - Math.abs(blocks[j].relPos.y));
 
                     blocks[j].coords = new Point(x, y);
+            }
+
+            for (var i = 0; i < blocks.length; i++) {
+                console.assert(blocks[i] instanceof Block, 
+                    'Incorrect function arguments');
+                console.assert(blocks[i].size instanceof Size, 
+                    'Block size is not set');
+
+                if (blocks[i].relId === undefined &&
+                    blocks[i].coords === undefined)
+                {
+                    blocks[i].coords = new Point(0, 0);
+                    break; // there is only block with these properties
+                }
+            } 
+
+            // calculating block #j position relative to #i
+            for (var i = 0; i < blocks.length; i++) { 
+                if (blocks[i].coords === undefined)
+                    continue;
+
+                for (var j = 0; j < blocks.length; j++) { 
+                    if (blocks[j].coords !== undefined)
+                        continue;
+                    if (blocks[j].relId != blocks[i].id)
+                        continue;
+
+                    calcPos(j, i);
+
+                    i = 0;
                 }
             }
+
+            for (var i = 0; i < blocks.length; i++)
+                if (blocks[i].coords === undefined)
+                    throw "Can't calucalte #" + blocks[i].domId + " relative position";
         }
 
         /** Caclulates blocks positions relative to the image top left corner.
@@ -831,8 +836,19 @@ var dia = (function() {
             top_ -= 2 * cfg.gridSize;
             bottom += 2 * cfg.gridSize;
 
-            var w = Math.ceil(right - left);
-            var h = Math.ceil(bottom - top_);
+
+            var w;
+            if (left < 0)
+                w = Math.ceil(right - left);
+            else
+                w = right;
+
+            var h;
+            if (top_ < 0)
+                h = Math.ceil(bottom - top_);
+            else
+                h = bottom;
+
             if (w % cfg.gridSize != 0)
                 w += cfg.gridSize - w % cfg.gridSize;
             if (h % cfg.gridSize != 0)
@@ -840,7 +856,9 @@ var dia = (function() {
             cfg.imgSize = new Size(w, h);
 
             for (var i = 0; i < blocks.length; i++) {
+                if (left < 0)
                     blocks[i].coords.x += -left;
+                if (top_ < 0)
                     blocks[i].coords.y += -top_;
             }
         }
